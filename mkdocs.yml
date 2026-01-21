@@ -6,7 +6,7 @@ theme:
   name: material
   palette:
     - scheme: default
-      primary: deep purple
+      primary: teal
       accent: amber
   features:
     - navigation.tabs
@@ -18,36 +18,42 @@ nav:
   - Musik ist Schwingung:
       - Klang & Ton: grundlagen.md
       - Rhythmus: rhythmus.md
-  - Rhythmen:
-    - Klang & Ton: grundlagen.md
-  - Instrumente:
-    - Klang & Ton: grundlagen.md
-  - Die Gitarre:
-    - Klang & Ton: grundlagen.md
-  - Rhythmen:
-    - Klang & Ton: grundlagen.md
-  - Instrumente:
-    - Klang & Ton: grundlagen.md
-  - Die Gitarre:
-    - Klang & Ton: grundlagen.md
-  - Rhythmen:
-    - Klang & Ton: grundlagen.md
-  - Instrumente:
-    - Klang & Ton: grundlagen.md
-  - Die Gitarre:
-    - Klang & Ton: grundlagen.md
-  - Rhythmen:
-    - Klang & Ton: grundlagen.md
-  - Instrumente:
-    - Klang & Ton: grundlagen.md
-  - Die Gitarre:
-    - Klang & Ton: grundlagen.md
-  - Rhythmen:
-    - Klang & Ton: grundlagen.md
-  - Instrumente:
-    - Klang & Ton: grundlagen.md
-  - Die Gitarre:
-    - Klang & Ton: grundlagen.md
+  - 01:
+      - Klang & Ton: grundlagen.md
+      - Rhythmus: rhythmus.md
+  - 02:
+      - Klang & Ton: grundlagen.md
+      - Rhythmus: rhythmus.md
+  - 03:
+      - Klang & Ton: grundlagen.md
+      - Rhythmus: rhythmus.md
+  - 04:
+      - Klang & Ton: grundlagen.md
+      - Rhythmus: rhythmus.md
+  - 05:
+      - Klang & Ton: grundlagen.md
+      - Rhythmus: rhythmus.md
+  - 06:
+      - Klang & Ton: grundlagen.md
+      - Rhythmus: rhythmus.md
+  - 07:
+      - Klang & Ton: grundlagen.md
+      - Rhythmus: rhythmus.md
+  - 08:
+      - Klang & Ton: grundlagen.md
+      - Rhythmus: rhythmus.md
+  - 09:
+      - Klang & Ton: grundlagen.md
+      - Rhythmus: rhythmus.md
+  - 10:
+      - Klang & Ton: grundlagen.md
+      - Rhythmus: rhythmus.md
+  - 11:
+      - Klang & Ton: grundlagen.md
+      - Rhythmus: rhythmus.md
+  - 12:
+      - Klang & Ton: grundlagen.md
+      - Rhythmus: rhythmus.md
 
 markdown_extensions:
   - admonition
