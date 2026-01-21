@@ -14,12 +14,17 @@ Schlägen.
   <button type="button" onclick="window.__strudelEval?.()">Update</button>
 </div>
 
-<strudel-editor class="strudel" id="ex1">
-  <!--
-setcpm(90/4)
-sound("bd sd").fast(2)
-  -->
+<strudel-editor class="strudel hide-until-marker" id="ex1">
+<!--
+setcpm(90/5)
+samples('github:tidalcycles/dirt-samples')
+let groove = p => sound(p).fast(2)
+
+// ---
+groove("bd sd")
+-->
 </strudel-editor>
+
 
 <script>
   (function () {
