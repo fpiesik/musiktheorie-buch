@@ -17,7 +17,6 @@ Schlägen.
 <strudel-editor class="strudel hide-until-marker" id="ex1">
 <!--
 setcpm(90/5)
-samples('github:tidalcycles/dirt-samples')
 let groove = p => sound(p).fast(2)
 
 // ---
