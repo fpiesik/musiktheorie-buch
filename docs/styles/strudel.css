@@ -1,9 +1,8 @@
-/* Strudel-Editor kompakt wie ein Beispiel-Widget */
-strudel-editor.strudel {
-  display: block;         /* wichtig */
+.strudel {
+  display: block;      /* wichtig: Custom Elements sind sonst inline */
   width: 100%;
-  height: 18px;          /* <- hier einstellen (z.B. 140–260px) */
+  height: 450px;       /* testweise groß */
   border: 1px solid #ccc;
   border-radius: 1px;
-  overflow: hidden;       /* schneidet ggf. interne Ränder sauber ab */
+  overflow: auto;      /* statt hidden */
 }
