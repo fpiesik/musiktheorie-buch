@@ -66,5 +66,5 @@ extra_javascript:
 
 extra_css:
   - styles/strudel.css
-  - javascripts/strudel-hide-until-marker.js
+  - javascripts/strudel-hide-until-marker-dom.js
 
