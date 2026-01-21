@@ -1,6 +1,5 @@
 (() => {
   const CLASS_NAME = "hide-until-marker";
-  console.log("strudel hide-until-marker loaded");
 
   function isMarkerLine(lineEl) {
     const t = (lineEl.textContent || "").replace(/\s+/g, " ").trim();
