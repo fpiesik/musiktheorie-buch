@@ -1,31 +1,20 @@
 (() => {
-  const MARKER = "// ---";
   const CLASS_NAME = "hide-until-marker";
 
-  function getRoots(el) {
-    // Manche Komponenten nutzen Shadow DOM, andere nicht
-    // Wir prüfen beides, sicher ist sicher.
-    const roots = [];
-    if (el.shadowRoot) roots.push(el.shadowRoot);
-    roots.push(el);
-    return roots;
+  // Marker-Erkennung: robust gegen Tokenisierung/Whitespace
+  function isMarkerLine(lineEl) {
+    const t = (lineEl.textContent || "").replace(/\s+/g, " ").trim();
+    // erkennt z.B. "// ---", "//---", "//  ---", etc.
+    return t.includes("//") && t.includes("---");
   }
 
-  function findLines(el) {
-    for (const root of getRoots(el)) {
-      const lines = root.querySelectorAll?.(".cm-line");
-      if (lines && lines.length) return lines;
-    }
-    return null;
-  }
-
-  function hideUntilMarker(el) {
-    const lines = findLines(el);
-    if (!lines) return false;
+  function applyToEditor(el) {
+    const lines = el.querySelectorAll(".cm-content .cm-line");
+    if (!lines.length) return false;
 
     let markerIndex = -1;
     lines.forEach((line, i) => {
-      if (line.textContent.trim() === MARKER) markerIndex = i;
+      if (isMarkerLine(line)) markerIndex = i;
     });
 
     if (markerIndex === -1) return false;
@@ -39,23 +28,26 @@
 
   function process() {
     document.querySelectorAll(`strudel-editor.${CLASS_NAME}`).forEach((el) => {
-      // nicht "einmalig", weil CodeMirror beim Update DOM neu rendert
-      hideUntilMarker(el);
+      applyToEditor(el);
     });
   }
 
-  // Erst versuchen, dann ein bisschen poll-en (weil Web Component + CM verzögert)
+  // wiederholt anwenden, weil "Update" den DOM neu rendert
   let tries = 0;
-  const t = setInterval(() => {
+  const timer = setInterval(() => {
     process();
-    if (++tries > 80) clearInterval(t); // ~8s
+    if (++tries > 100) clearInterval(timer); // ~10s
   }, 100);
 
-  window.addEventListener("load", process);
+  window.addEventListener("load", () => {
+    process();
+    setTimeout(process, 250);
+    setTimeout(process, 1000);
+  });
 
-  // Optional: nach jedem Klick auf "Update" nochmal anwenden
+  // Nach Klick auf Update nochmal
   document.addEventListener("click", (e) => {
-    if (e.target && (e.target.textContent || "").trim() === "Update") {
+    if ((e.target?.textContent || "").trim() === "Update") {
       setTimeout(process, 50);
       setTimeout(process, 250);
     }
