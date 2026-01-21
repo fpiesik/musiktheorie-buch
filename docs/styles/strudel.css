@@ -1,8 +1,15 @@
-.strudel {
-  display: block;      /* wichtig: Custom Elements sind sonst inline */
+strudel-editor.strudel {
+  display: block;
   width: 100%;
-  height: 100px;       /* testweise groß */
   border: 1px solid #ccc;
-  border-radius: 1px;
-  overflow: auto;      /* statt hidden */
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+strudel-editor.strudel canvas {
+  display: none !important;
+}
+
+strudel-editor.strudel .cm-editor {
+  max-height: 6em;
 }
