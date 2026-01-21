@@ -14,7 +14,7 @@ Schlägen.
   <button type="button" onclick="window.__strudelEval?.()">Update</button>
 </div>
 
-<strudel-editor class="strudel hide-until-marker" id="ex1">
+<strudel-editor class="strudel" id="ex1">
 <!--
 setcpm(90/5)
 let groove = p => sound(p).fast(2)
