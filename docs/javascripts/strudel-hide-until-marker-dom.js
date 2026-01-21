@@ -1,15 +1,28 @@
 (() => {
   const CLASS_NAME = "hide-until-marker";
+  console.log("strudel hide-until-marker loaded");
 
-  // Marker-Erkennung: robust gegen Tokenisierung/Whitespace
   function isMarkerLine(lineEl) {
     const t = (lineEl.textContent || "").replace(/\s+/g, " ").trim();
-    // erkennt z.B. "// ---", "//---", "//  ---", etc.
     return t.includes("//") && t.includes("---");
   }
 
-  function applyToEditor(el) {
-    const lines = el.querySelectorAll(".cm-content .cm-line");
+  function findRenderedContainer(editorEl) {
+    // Strudel hängt den gerenderten Editor offenbar NACH dem Custom Element an.
+    // Wir laufen ein paar Geschwister ab, bis wir etwas mit .cm-editor/.cm-line finden.
+    let n = editorEl.nextElementSibling;
+    for (let i = 0; i < 8 && n; i++) {
+      if (n.querySelector?.(".cm-line, .cm-editor, .cm-content")) return n;
+      n = n.nextElementSibling;
+    }
+    return null;
+  }
+
+  function applyToEditor(editorEl) {
+    const container = findRenderedContainer(editorEl);
+    if (!container) return false;
+
+    const lines = container.querySelectorAll(".cm-content .cm-line, .cm-line");
     if (!lines.length) return false;
 
     let markerIndex = -1;
@@ -23,6 +36,10 @@
       lines[i].style.display = "none";
     }
 
+    // Optional: Zeilennummern/Gutter verstecken
+    const gutters = container.querySelector(".cm-gutters");
+    if (gutters) gutters.style.display = "none";
+
     return true;
   }
 
@@ -32,11 +49,11 @@
     });
   }
 
-  // wiederholt anwenden, weil "Update" den DOM neu rendert
+  // Polling, weil Strudel/CodeMirror asynchron rendert und "Update" neu rendert
   let tries = 0;
   const timer = setInterval(() => {
     process();
-    if (++tries > 100) clearInterval(timer); // ~10s
+    if (++tries > 120) clearInterval(timer); // ~12s
   }, 100);
 
   window.addEventListener("load", () => {
@@ -45,7 +62,7 @@
     setTimeout(process, 1000);
   });
 
-  // Nach Klick auf Update nochmal
+  // Nach Klick auf Update nochmal anwenden
   document.addEventListener("click", (e) => {
     if ((e.target?.textContent || "").trim() === "Update") {
       setTimeout(process, 50);
