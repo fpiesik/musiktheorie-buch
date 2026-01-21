@@ -16,6 +16,7 @@ Schlägen.
 
 <strudel-editor class="strudel" id="ex1">
   <!--
+setcpm(90)
 sound("bd sd").fast(2)
   -->
 </strudel-editor>
