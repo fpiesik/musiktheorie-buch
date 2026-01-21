@@ -9,14 +9,14 @@ Schlägen.
 👉 Achte nur auf **Reihenfolge** und **Wiederholung**, nicht auf Technik.
 
 ---
-<div style="display:flex; gap:.5rem; align-items:center; margin:.2rem 0;">
+<div style="display:flex; gap:.5rem; align-items:center; margin:.5rem 0;">
   <button type="button" onclick="window.__strudelToggle?.()">▶/■</button>
   <button type="button" onclick="window.__strudelEval?.()">Update</button>
 </div>
 
 <strudel-editor class="strudel" id="ex1">
   <!--
-setcpm(90/4)
+setcpm(90/3)
 sound("bd sd").fast(2)
   -->
 </strudel-editor>
