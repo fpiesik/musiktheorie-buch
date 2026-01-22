@@ -2,23 +2,33 @@
   const CLASS_BASE = "hide-until-marker";
   const CLASS_NO_VIZ = "no-viz";
 
-  // Marker (wie gehabt, Leerzeichen optional)
-  const RE_BLOCK_MARKER = /\/\/\s*---\s*$/; // z.B. //--- oder // ---
-  const RE_HIDE_LINE    = /\/\/\s*-\!-\s*$/; // z.B. //-!- oder // -!-
+  // Marker (ohne Leerzeichen empfohlen)
+  const BLOCK_MARK = "//---";
+  const HIDE_MARK  = "//-!-";
 
-  function text(lineEl) {
-    return (lineEl.textContent || "").trim();
+  /* ------------------------------------------------------------
+     Marker-Erkennung (robust für CodeMirror)
+  ------------------------------------------------------------ */
+
+  function commentPart(lineEl) {
+    const t = (lineEl.textContent || "");
+    const idx = t.indexOf("//");
+    if (idx === -1) return "";
+    return t.slice(idx);
   }
 
   function isBlockMarker(lineEl) {
-    return RE_BLOCK_MARKER.test(text(lineEl));
+    return commentPart(lineEl).includes(BLOCK_MARK);
   }
 
   function isHideLine(lineEl) {
-    return RE_HIDE_LINE.test(text(lineEl));
+    return commentPart(lineEl).includes(HIDE_MARK);
   }
 
-  // Bei dir wird der gerenderte Bereich nach <strudel-editor> als Geschwister angehängt
+  /* ------------------------------------------------------------
+     Gerenderten CodeMirror-Container finden
+  ------------------------------------------------------------ */
+
   function findRenderedContainer(customEl) {
     let n = customEl.nextElementSibling;
     for (let i = 0; i < 12 && n; i++) {
@@ -27,6 +37,10 @@
     }
     return null;
   }
+
+  /* ------------------------------------------------------------
+     Style-Tag verwalten
+  ------------------------------------------------------------ */
 
   function ensureStyleTag() {
     let tag = document.getElementById("strudel-marker-hide-style");
@@ -38,60 +52,70 @@
     return tag;
   }
 
-  function escapeCssIdent(s) {
-    // CSS.escape ist nicht überall garantiert; einfache Fallback-Variante
-    if (window.CSS && CSS.escape) return CSS.escape(s);
-    return String(s).replace(/[^a-zA-Z0-9_-]/g, "\\$&");
-  }
-
   function buildNthList(indices1Based) {
     return indices1Based
       .map(n => `.cm-content .cm-line:nth-of-type(${n})`)
       .join(", ");
   }
 
-  function buildCssForEditor(uniqClass, hideFirstCount, hideLineNums1, hideMarkerNums1, noViz) {
+  /* ------------------------------------------------------------
+     CSS für einen Editor erzeugen
+  ------------------------------------------------------------ */
+
+  function buildCss(uniq, hideFirstCount, hideLineNums1, hideMarkerNums1, noViz) {
     let css = "";
 
     if (hideFirstCount > 0) {
       css += `
-/* ${uniqClass}: hide first ${hideFirstCount} lines (until marker) */
-.cm-editor.${uniqClass} .cm-content .cm-line:nth-of-type(-n+${hideFirstCount}) { display: none !important; }
+/* ${uniq}: hide first ${hideFirstCount} lines (until //---) */
+.cm-editor.${uniq} .cm-content .cm-line:nth-of-type(-n+${hideFirstCount}) {
+  display: none !important;
+}
 `;
     }
 
     if (hideLineNums1.length > 0) {
       css += `
-/* ${uniqClass}: hide lines marked with //-!- */
-.cm-editor.${uniqClass} ${buildNthList(hideLineNums1)} { display: none !important; }
+/* ${uniq}: hide lines marked with //-!- */
+.cm-editor.${uniq} ${buildNthList(hideLineNums1)} {
+  display: none !important;
+}
 `;
     }
 
     if (hideMarkerNums1.length > 0) {
       css += `
-/* ${uniqClass}: always hide marker line itself */
-.cm-editor.${uniqClass} ${buildNthList(hideMarkerNums1)} { display: none !important; }
+/* ${uniq}: hide marker line itself */
+.cm-editor.${uniq} ${buildNthList(hideMarkerNums1)} {
+  display: none !important;
+}
 `;
     }
 
-    // Gutter (Zeilennummern) nur ausblenden, wenn wir wirklich was ausblenden
     if (hideFirstCount > 0 || hideLineNums1.length > 0 || hideMarkerNums1.length > 0) {
       css += `
-.cm-editor.${uniqClass} .cm-gutters { display: none !important; }
+.cm-editor.${uniq} .cm-gutters {
+  display: none !important;
+}
 `;
     }
 
-    // no-viz: Visualizer/Canvas ausblenden (wenn vorhanden)
-    // (Wir zielen breit auf canvas/SVG im gerenderten Container. Das betrifft NICHT den Editor selbst.)
     if (noViz) {
       css += `
-/* ${uniqClass}: no-viz -> hide visual output (canvas/svg) */
-.${uniqClass}-container canvas, .${uniqClass}-container svg { display: none !important; }
+/* ${uniq}: no-viz -> hide visual output */
+.${uniq}-container canvas,
+.${uniq}-container svg {
+  display: none !important;
+}
 `;
     }
 
     return css;
   }
+
+  /* ------------------------------------------------------------
+     Einen Editor verarbeiten
+  ------------------------------------------------------------ */
 
   function applyOne(customEl, idx) {
     const container = findRenderedContainer(customEl);
@@ -100,13 +124,11 @@
     const cmRoot = container.querySelector(".cm-editor");
     if (!cmRoot) return false;
 
-    // eindeutige Klassen pro Instanz
     const uniq = customEl.id ? `sm-${customEl.id}` : `sm-auto-${idx}`;
-    cmRoot.classList.add(uniq);
+    const uniqContainer = `${uniq}-container`;
 
-    // zusätzlich eine Klasse am Container, falls wir no-viz darauf anwenden wollen
-    const uniqContainerClass = `${uniq}-container`;
-    container.classList.add(uniqContainerClass);
+    cmRoot.classList.add(uniq);
+    container.classList.add(uniqContainer);
 
     const lines = cmRoot.querySelectorAll(".cm-line");
     if (!lines.length) return false;
@@ -123,16 +145,21 @@
       if (isHideLine(line)) hideLineNums1.push(i + 1);
     });
 
-    const hideFirstCount = blockMarkerIndex0 >= 0 ? (blockMarkerIndex0 + 1) : 0;
+    const hideFirstCount =
+      blockMarkerIndex0 >= 0 ? (blockMarkerIndex0 + 1) : 0;
+
     const noViz = customEl.classList.contains(CLASS_NO_VIZ);
 
     const styleTag = ensureStyleTag();
-
-    // ✅ WICHTIG: Regeln pro Editor *aktualisieren*, nicht nur einmal anhängen.
-    // Wir ersetzen den Block für diese uniq-Klasse per Regex.
     const start = `/*BEGIN:${uniq}*/`;
     const end   = `/*END:${uniq}*/`;
-    const blockCss = `${start}\n${buildCssForEditor(uniq, hideFirstCount, hideLineNums1, hideMarkerNums1, noViz)}\n${end}\n`;
+    const blockCss = `${start}\n${buildCss(
+      uniq,
+      hideFirstCount,
+      hideLineNums1,
+      hideMarkerNums1,
+      noViz
+    )}\n${end}\n`;
 
     const re = new RegExp(`/\\*BEGIN:${uniq}\\*/[\\s\\S]*?/\\*END:${uniq}\\*/\\n?`, "g");
     const current = styleTag.textContent || "";
@@ -145,18 +172,26 @@
     return true;
   }
 
+  /* ------------------------------------------------------------
+     Verarbeitung aller Strudel-Editoren
+  ------------------------------------------------------------ */
+
   function process() {
-    document.querySelectorAll(`strudel-editor.${CLASS_BASE}`).forEach((el, i) => {
-      applyOne(el, i);
-    });
+    document
+      .querySelectorAll(`strudel-editor.${CLASS_BASE}`)
+      .forEach((el, i) => applyOne(el, i));
   }
 
-  // Performance: kurzes Polling-Fenster, dann nur Events
+  /* ------------------------------------------------------------
+     Lifecycle & Performance
+  ------------------------------------------------------------ */
+
   function start() {
     process();
 
+    // kurzes Polling-Fenster (Web Components / CM async)
     let tries = 0;
-    const maxTries = 18;     // 18 * 200ms = 3.6s
+    const maxTries = 18; // ~3.6s
     const timer = setInterval(() => {
       process();
       if (++tries >= maxTries) clearInterval(timer);
