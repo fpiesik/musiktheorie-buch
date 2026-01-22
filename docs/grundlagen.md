@@ -12,9 +12,10 @@ Schlägen.
 <div class="strudel-wrap">
   <strudel-editor class="strudel hide-until-marker" id="ex1">
     <!--
-setcpm(120/2)
-sound("bd sd, - - - hh - hh - -, - perc - perc:1*2")
-.bank("RolandCompurhythm1000")  // -!-
+setcpm(60)
+n("0 2 4 <[6,8] [7,9]>")
+.scale("C:minor").sound("piano")
+._pianoroll() //-!-
     -->
   </strudel-editor>
 </div>
