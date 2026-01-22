@@ -1,177 +1,155 @@
 (() => {
   const CLASS_BASE = "hide-until-marker";
 
-  // Marker (ohne Leerzeichen empfohlen)
-  const BLOCK_MARK = "//---"; // block: alles bis inkl. Marker
-  const HIDE_MARK  = "//-!-"; // einzelne Zeile
+  // Marker (ohne Leerzeichen)
+  const RE_BLOCK_MARKER = /\/\/---\s*$/;  // //--- am Zeilenende
+  const RE_HIDE_LINE    = /\/\/-!-\s*$/;  // //-!- am Zeilenende
 
-  // Debounce
-  function debounce(fn, ms) {
-    let t = null;
-    return (...args) => {
-      clearTimeout(t);
-      t = setTimeout(() => fn(...args), ms);
-    };
-  }
-
-  function commentPart(lineEl) {
-    const t = (lineEl.textContent || "");
-    const idx = t.indexOf("//");
-    if (idx === -1) return "";
-    return t.slice(idx);
+  function text(lineEl) {
+    return (lineEl.textContent || "").trim();
   }
 
   function isBlockMarker(lineEl) {
-    // bewusst robust: nicht ans Zeilenende gebunden
-    return commentPart(lineEl).includes(BLOCK_MARK);
+    return RE_BLOCK_MARKER.test(text(lineEl));
   }
 
   function isHideLine(lineEl) {
-    return commentPart(lineEl).includes(HIDE_MARK);
+    return RE_HIDE_LINE.test(text(lineEl));
   }
 
-  function findRenderedContainer(customEl) {
-    // Strudel hängt gerenderten Bereich nach <strudel-editor> an
+  function findRenderedCmRoot(customEl) {
+    // gerenderter CodeMirror kommt als Geschwister nach <strudel-editor>
     let n = customEl.nextElementSibling;
     for (let i = 0; i < 12 && n; i++) {
-      if (n.querySelector?.(".cm-editor")) return n;
+      const cm = n.querySelector?.(".cm-editor");
+      if (cm) return cm;
       n = n.nextElementSibling;
     }
     return null;
   }
 
-  function findRenderedCmRoot(customEl) {
-    const container = findRenderedContainer(customEl);
-    if (!container) return null;
-    return container.querySelector(".cm-editor");
+  function ensureStyleTag() {
+    let tag = document.getElementById("strudel-marker-hide-style");
+    if (!tag) {
+      tag = document.createElement("style");
+      tag.id = "strudel-marker-hide-style";
+      document.head.appendChild(tag);
+    }
+    return tag;
   }
 
-  function apply(customEl) {
+  function buildNthList(indices1Based) {
+    return indices1Based
+      .map(n => `.cm-content .cm-line:nth-of-type(${n})`)
+      .join(", ");
+  }
+
+  function applyOne(customEl, idx) {
     const cmRoot = findRenderedCmRoot(customEl);
     if (!cmRoot) return false;
+
+    const uniq = customEl.id ? `sm-${customEl.id}` : `sm-auto-${idx}`;
+    cmRoot.classList.add("strudel-cm", uniq);
 
     const lines = cmRoot.querySelectorAll(".cm-line");
     if (!lines.length) return false;
 
-    // letztes //--- gewinnt
-    let blockIdx = -1;
+    // 1) Block: bis //--- verstecken (inkl. Markerzeile)
+    let blockMarkerIndex0 = -1;
+
+    // 2) Einzelzeilen: Zeilen mit //-!- verstecken
+    const hideLineNums1 = [];
+
+    // 3) Markerzeilen immer verstecken
+    const hideMarkerNums1 = [];
+
     lines.forEach((line, i) => {
-      if (isBlockMarker(line)) blockIdx = i;
-    });
-
-    let hidesSomething = false;
-
-    lines.forEach((line, i) => {
-      const hide =
-        (blockIdx >= 0 && i <= blockIdx) || // bis //---
-        isHideLine(line) ||                 // //-!-
-        isBlockMarker(line);                // Markerzeile selbst
-
-      if (hide) {
-        hidesSomething = true;
-        line.style.setProperty("display", "none", "important");
-      } else {
-        line.style.removeProperty("display");
+      if (isBlockMarker(line)) {
+        blockMarkerIndex0 = i;
+        hideMarkerNums1.push(i + 1);
       }
+      if (isHideLine(line)) hideLineNums1.push(i + 1);
     });
 
-    // optional: gutters verstecken, wenn wir Zeilen verstecken
-    const gutters = cmRoot.querySelector(".cm-gutters");
-    if (gutters) {
-      if (hidesSomething) gutters.style.setProperty("display", "none", "important");
-      else gutters.style.removeProperty("display");
+    const hideFirstCount =
+      blockMarkerIndex0 >= 0 ? (blockMarkerIndex0 + 1) : 0;
+
+    let css = "";
+
+    if (hideFirstCount > 0) {
+      css += `
+/* ${uniq}: hide first ${hideFirstCount} lines (until //---) */
+.cm-editor.${uniq}
+.cm-content .cm-line:nth-of-type(-n+${hideFirstCount}) {
+  display: none !important;
+}
+`;
+    }
+
+    if (hideLineNums1.length > 0) {
+      css += `
+/* ${uniq}: hide lines marked with //-!- */
+.cm-editor.${uniq}
+${buildNthList(hideLineNums1)} {
+  display: none !important;
+}
+`;
+    }
+
+    if (hideMarkerNums1.length > 0) {
+      css += `
+/* ${uniq}: always hide //--- marker line */
+.cm-editor.${uniq}
+${buildNthList(hideMarkerNums1)} {
+  display: none !important;
+}
+`;
+    }
+
+    // Gutter nur ausblenden, wenn wirklich etwas ausgeblendet wird
+    if (hideFirstCount > 0 || hideLineNums1.length > 0) {
+      css += `
+.cm-editor.${uniq} .cm-gutters {
+  display: none !important;
+}
+`;
+    }
+
+    if (!css) return false;
+
+    const tag = ensureStyleTag();
+
+    // ⚠️ bewusst simpel: nur einmal anhängen (letzter funktionierender Stand)
+    if (!tag.textContent.includes(`/* ${uniq}:`)) {
+      tag.appendChild(document.createTextNode(css));
     }
 
     return true;
   }
 
-  // --- Beobachter-Management ---
-  // Pro <strudel-editor> merken wir uns:
-  // - aktuell beobachteten cmRoot (kann wechseln!)
-  // - Observer für cmRoot
-  // - Observer für container/parent (um Wechsel zu erkennen)
-  const state = new WeakMap();
-
-  function attach(customEl) {
-    const container = findRenderedContainer(customEl);
-    const cmRoot = container?.querySelector?.(".cm-editor") || null;
-    if (!container || !cmRoot) return false;
-
-    let s = state.get(customEl);
-    if (!s) {
-      s = { cmRoot: null, cmObs: null, containerObs: null };
-      state.set(customEl, s);
-    }
-
-    // Wenn cmRoot neu ist (Play remount!), Observer neu setzen
-    if (s.cmRoot !== cmRoot) {
-      if (s.cmObs) s.cmObs.disconnect();
-      s.cmRoot = cmRoot;
-
-      const reapply = debounce(() => apply(customEl), 30);
-
-      s.cmObs = new MutationObserver(reapply);
-      s.cmObs.observe(cmRoot, { childList: true, subtree: true, characterData: true });
-
-      // sofort anwenden
-      apply(customEl);
-    }
-
-    // Container observer nur einmal: merkt, wenn Strudel cmRoot austauscht
-    if (!s.containerObs) {
-      const reattach = debounce(() => {
-        // Bei Änderungen im Container: ggf. neuen cmRoot finden und attachen
-        attach(customEl);
-        apply(customEl);
-      }, 30);
-
-      s.containerObs = new MutationObserver(reattach);
-      s.containerObs.observe(container, { childList: true, subtree: true });
-    }
-
-    return true;
+  function process() {
+    document
+      .querySelectorAll(`strudel-editor.${CLASS_BASE}`)
+      .forEach((el, i) => applyOne(el, i));
   }
 
-  function processAll() {
-    document.querySelectorAll(`strudel-editor.${CLASS_BASE}`).forEach((el) => {
-      attach(el);
-      apply(el);
-    });
-  }
+  // Wiederholt anwenden (Mount + Update)
+  let tries = 0;
+  const timer = setInterval(() => {
+    process();
+    if (++tries > 60) clearInterval(timer);
+  }, 100);
 
-  function start() {
-    processAll();
+  window.addEventListener("load", () => {
+    process();
+    setTimeout(process, 250);
+    setTimeout(process, 1000);
+  });
 
-    // Bootstrapping: falls cmRoot erst später erscheint
-    let tries = 0;
-    const maxTries = 60;   // 60 * 200ms = 12s (nur initial)
-    const t = setInterval(() => {
-      processAll();
-      if (++tries >= maxTries) clearInterval(t);
-    }, 200);
-
-    window.addEventListener("load", () => {
-      processAll();
-      setTimeout(processAll, 250);
-      setTimeout(processAll, 1000);
-    });
-
-    // Wenn du Play drückst, passiert oft ein Remount: nochmal kurz nachziehen
-    document.addEventListener("click", (e) => {
-      const txt = (e.target?.textContent || "").trim();
-      // trifft auf deinen Toggle-Button (▶/■) und ggf. Strudel-Controls
-      if (txt === "▶" || txt === "■" || txt === "▶/■") {
-        setTimeout(processAll, 50);
-        setTimeout(processAll, 250);
-        setTimeout(processAll, 800);
-      }
-      if (txt === "Update") {
-        setTimeout(processAll, 50);
-        setTimeout(processAll, 250);
-        setTimeout(processAll, 800);
-      }
-    });
-  }
-
-  start();
+  document.addEventListener("click", (e) => {
+    if ((e.target?.textContent || "").trim() === "Update") {
+      setTimeout(process, 50);
+      setTimeout(process, 250);
+    }
+  });
 })();
