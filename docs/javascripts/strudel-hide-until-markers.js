@@ -1,46 +1,32 @@
 (() => {
   const CLASS_BASE = "hide-until-marker";
-  const CLASS_NO_VIZ = "no-viz";
 
-  // Marker (ohne Leerzeichen empfohlen)
-  const BLOCK_MARK = "//---";
-  const HIDE_MARK  = "//-!-";
+  // Marker (ohne Leerzeichen)
+  const RE_BLOCK_MARKER = /\/\/---\s*$/;  // //--- am Zeilenende
+  const RE_HIDE_LINE    = /\/\/-!-\s*$/;  // //-!- am Zeilenende
 
-  /* ------------------------------------------------------------
-     Marker-Erkennung (robust für CodeMirror)
-  ------------------------------------------------------------ */
-
-  function commentPart(lineEl) {
-    const t = (lineEl.textContent || "");
-    const idx = t.indexOf("//");
-    if (idx === -1) return "";
-    return t.slice(idx);
+  function text(lineEl) {
+    return (lineEl.textContent || "").trim();
   }
 
   function isBlockMarker(lineEl) {
-    return commentPart(lineEl).includes(BLOCK_MARK);
+    return RE_BLOCK_MARKER.test(text(lineEl));
   }
 
   function isHideLine(lineEl) {
-    return commentPart(lineEl).includes(HIDE_MARK);
+    return RE_HIDE_LINE.test(text(lineEl));
   }
 
-  /* ------------------------------------------------------------
-     Gerenderten CodeMirror-Container finden
-  ------------------------------------------------------------ */
-
-  function findRenderedContainer(customEl) {
+  function findRenderedCmRoot(customEl) {
+    // Bei dir wird der gerenderte Bereich nach <strudel-editor> als Geschwister angehängt
     let n = customEl.nextElementSibling;
     for (let i = 0; i < 12 && n; i++) {
-      if (n.querySelector?.(".cm-editor")) return n;
+      const cm = n.querySelector?.(".cm-editor");
+      if (cm) return cm;
       n = n.nextElementSibling;
     }
     return null;
   }
-
-  /* ------------------------------------------------------------
-     Style-Tag verwalten
-  ------------------------------------------------------------ */
 
   function ensureStyleTag() {
     let tag = document.getElementById("strudel-marker-hide-style");
@@ -58,11 +44,30 @@
       .join(", ");
   }
 
-  /* ------------------------------------------------------------
-     CSS für einen Editor erzeugen
-  ------------------------------------------------------------ */
+  function applyOne(customEl, idx) {
+    const cmRoot = findRenderedCmRoot(customEl);
+    if (!cmRoot) return false;
 
-  function buildCss(uniq, hideFirstCount, hideLineNums1, hideMarkerNums1, noViz) {
+    const uniq = customEl.id ? `sm-${customEl.id}` : `sm-auto-${idx}`;
+    cmRoot.classList.add("strudel-cm", uniq);
+
+    const lines = cmRoot.querySelectorAll(".cm-line");
+    if (!lines.length) return false;
+
+    let blockMarkerIndex0 = -1;
+    const hideLineNums1 = [];
+    const hideMarkerNums1 = [];
+
+    lines.forEach((line, i) => {
+      if (isBlockMarker(line)) {
+        blockMarkerIndex0 = i;
+        hideMarkerNums1.push(i + 1); // Markerzeile selbst
+      }
+      if (isHideLine(line)) hideLineNums1.push(i + 1);
+    });
+
+    const hideFirstCount = blockMarkerIndex0 >= 0 ? (blockMarkerIndex0 + 1) : 0;
+
     let css = "";
 
     if (hideFirstCount > 0) {
@@ -85,7 +90,7 @@
 
     if (hideMarkerNums1.length > 0) {
       css += `
-/* ${uniq}: hide marker line itself */
+/* ${uniq}: always hide //--- marker line itself */
 .cm-editor.${uniq} ${buildNthList(hideMarkerNums1)} {
   display: none !important;
 }
@@ -100,98 +105,35 @@
 `;
     }
 
-    if (noViz) {
-      css += `
-/* ${uniq}: no-viz -> hide visual output */
-.${uniq}-container canvas,
-.${uniq}-container svg {
-  display: none !important;
-}
-`;
-    }
+    if (!css) return false;
 
-    return css;
-  }
-
-  /* ------------------------------------------------------------
-     Einen Editor verarbeiten
-  ------------------------------------------------------------ */
-
-  function applyOne(customEl, idx) {
-    const container = findRenderedContainer(customEl);
-    if (!container) return false;
-
-    const cmRoot = container.querySelector(".cm-editor");
-    if (!cmRoot) return false;
-
-    const uniq = customEl.id ? `sm-${customEl.id}` : `sm-auto-${idx}`;
-    const uniqContainer = `${uniq}-container`;
-
-    cmRoot.classList.add(uniq);
-    container.classList.add(uniqContainer);
-
-    const lines = cmRoot.querySelectorAll(".cm-line");
-    if (!lines.length) return false;
-
-    let blockMarkerIndex0 = -1;
-    const hideLineNums1 = [];
-    const hideMarkerNums1 = [];
-
-    lines.forEach((line, i) => {
-      if (isBlockMarker(line)) {
-        blockMarkerIndex0 = i;
-        hideMarkerNums1.push(i + 1);
-      }
-      if (isHideLine(line)) hideLineNums1.push(i + 1);
-    });
-
-    const hideFirstCount =
-      blockMarkerIndex0 >= 0 ? (blockMarkerIndex0 + 1) : 0;
-
-    const noViz = customEl.classList.contains(CLASS_NO_VIZ);
-
-    const styleTag = ensureStyleTag();
+    // ✅ Optimierung/Stabilität: CSS-Block pro Editor ersetzen/aktualisieren
+    const tag = ensureStyleTag();
     const start = `/*BEGIN:${uniq}*/`;
     const end   = `/*END:${uniq}*/`;
-    const blockCss = `${start}\n${buildCss(
-      uniq,
-      hideFirstCount,
-      hideLineNums1,
-      hideMarkerNums1,
-      noViz
-    )}\n${end}\n`;
+    const block = `${start}\n${css}\n${end}\n`;
 
     const re = new RegExp(`/\\*BEGIN:${uniq}\\*/[\\s\\S]*?/\\*END:${uniq}\\*/\\n?`, "g");
-    const current = styleTag.textContent || "";
-    const next = current.match(re)
-      ? current.replace(re, blockCss)
-      : current + "\n" + blockCss;
+    const current = tag.textContent || "";
+    const next = current.match(re) ? current.replace(re, block) : (current + "\n" + block);
 
-    if (next !== current) styleTag.textContent = next;
+    if (next !== current) tag.textContent = next;
 
     return true;
   }
 
-  /* ------------------------------------------------------------
-     Verarbeitung aller Strudel-Editoren
-  ------------------------------------------------------------ */
-
   function process() {
-    document
-      .querySelectorAll(`strudel-editor.${CLASS_BASE}`)
-      .forEach((el, i) => applyOne(el, i));
+    document.querySelectorAll(`strudel-editor.${CLASS_BASE}`).forEach((el, i) => {
+      applyOne(el, i);
+    });
   }
-
-  /* ------------------------------------------------------------
-     Lifecycle & Performance
-  ------------------------------------------------------------ */
 
   function start() {
     process();
 
-    // kurzes Polling-Fenster (Web Components / CM async)
+    // ✅ Performance: kürzeres Polling-Fenster, weniger häufig
     let tries = 0;
-    const maxTries = 18; // ~3.6s
+    const maxTries = 18;   // 18 * 200ms = 3.6s
     const timer = setInterval(() => {
       process();
       if (++tries >= maxTries) clearInterval(timer);
@@ -205,6 +147,7 @@
 
     document.addEventListener("click", (e) => {
       if ((e.target?.textContent || "").trim() === "Update") {
+        // nach Update neu anwenden, weil CM gern neu rendert
         setTimeout(process, 50);
         setTimeout(process, 250);
       }
