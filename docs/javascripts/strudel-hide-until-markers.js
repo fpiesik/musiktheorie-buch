@@ -2,37 +2,24 @@
   const CLASS_BASE = "hide-until-marker";
   const CLASS_ONLY_VIZ = "only-viz";
 
-  // Marker (ohne Leerzeichen gedacht)
-  const BLOCK_MARK = "//---";
-  const HIDE_MARK  = "//-!-";
+  // Marker (ohne Leerzeichen)
+  const RE_BLOCK_MARKER = /\/\/---\s*$/;  // //--- am Zeilenende
+  const RE_HIDE_LINE    = /\/\/-!-\s*$/;  // //-!- am Zeilenende
 
-  /* ------------------------------------------------------------
-     Hilfsfunktionen
-  ------------------------------------------------------------ */
-
-  // entfernt Zero-Width, BOM, Whitespace → robuste Vergleichsbasis
-  function normalize(s) {
-    return (s || "")
-      .replace(/[\u200B-\u200D\uFEFF]/g, "")
-      .replace(/\s+/g, "");
-  }
-
-  function hasMarker(lineEl, marker) {
-    const raw = lineEl.textContent || "";
-    const norm = normalize(raw);
-    return norm.includes(normalize(marker));
+  function text(lineEl) {
+    return (lineEl.textContent || "").trim();
   }
 
   function isBlockMarker(lineEl) {
-    return hasMarker(lineEl, BLOCK_MARK);
+    return RE_BLOCK_MARKER.test(text(lineEl));
   }
 
   function isHideLine(lineEl) {
-    return hasMarker(lineEl, HIDE_MARK);
+    return RE_HIDE_LINE.test(text(lineEl));
   }
 
-  // Strudel hängt den CodeMirror-Block als Geschwister an
   function findRenderedCmRoot(customEl) {
+    // Bei dir wird der gerenderte Bereich nach <strudel-editor> als Geschwister angehängt
     let n = customEl.nextElementSibling;
     for (let i = 0; i < 12 && n; i++) {
       const cm = n.querySelector?.(".cm-editor");
@@ -42,97 +29,129 @@
     return null;
   }
 
-  /* ------------------------------------------------------------
-     Kernlogik
-  ------------------------------------------------------------ */
+  function ensureStyleTag() {
+    let tag = document.getElementById("strudel-marker-hide-style");
+    if (!tag) {
+      tag = document.createElement("style");
+      tag.id = "strudel-marker-hide-style";
+      document.head.appendChild(tag);
+    }
+    return tag;
+  }
 
-  function applyOne(customEl) {
+  function buildNthList(indices1Based) {
+    return indices1Based
+      .map(n => `.cm-content .cm-line:nth-of-type(${n})`)
+      .join(", ");
+  }
+
+  function applyOne(customEl, idx) {
     const cmRoot = findRenderedCmRoot(customEl);
     if (!cmRoot) return false;
+
+    const uniq = customEl.id ? `sm-${customEl.id}` : `sm-auto-${idx}`;
+    cmRoot.classList.add("strudel-cm", uniq);
 
     const lines = cmRoot.querySelectorAll(".cm-line");
     if (!lines.length) return false;
 
-    // letztes Vorkommen von //--- gewinnt
-    let blockMarkerIndex = -1;
+    // 1) Block: bis //--- verstecken (inkl. Markerzeile)
+    let blockMarkerIndex0 = -1;
+
+    // 2) Einzelzeilen: Zeilen mit //-!- verstecken
+    const hideLineNums1 = [];
+
+    // 3) Markerzeilen immer verstecken (auch wenn kein Block-Modus aktiv)
+    const hideMarkerNums1 = [];
+
     lines.forEach((line, i) => {
-      if (isBlockMarker(line)) blockMarkerIndex = i;
+      if (isBlockMarker(line)) {
+        blockMarkerIndex0 = i;
+        hideMarkerNums1.push(i + 1); // Markerzeile selbst
+      }
+      if (isHideLine(line)) hideLineNums1.push(i + 1);
     });
 
-    let hidesSomething = false;
+    const hideFirstCount = blockMarkerIndex0 >= 0 ? (blockMarkerIndex0 + 1) : 0;
 
-    lines.forEach((line, i) => {
-      const hide =
-        (blockMarkerIndex >= 0 && i <= blockMarkerIndex) || // bis //---
-        isHideLine(line) ||                                 // //-!-
-        isBlockMarker(line);                                // Markerzeile selbst
+    // CSS bauen
+    let css = "";
 
-      if (hide) {
-        hidesSomething = true;
-        line.style.setProperty("display", "none", "important");
-      } else {
-        line.style.removeProperty("display");
-      }
-    });
-
-    // Zeilennummern (Gutter) nur ausblenden, wenn nötig
-    const gutters = cmRoot.querySelector(".cm-gutters");
-    if (gutters) {
-      if (hidesSomething) {
-        gutters.style.setProperty("display", "none", "important");
-      } else {
-        gutters.style.removeProperty("display");
-      }
+    if (hideFirstCount > 0) {
+      css += `
+/* ${uniq}: hide first ${hideFirstCount} lines (until //---) */
+.cm-editor.${uniq} .cm-content .cm-line:nth-of-type(-n+${hideFirstCount}) {
+  display: none !important;
+}
+`;
     }
 
-    // only-viz: CodeMirror komplett ausblenden, Visual bleibt
+    if (hideLineNums1.length > 0) {
+      css += `
+/* ${uniq}: hide lines marked with //-!- */
+.cm-editor.${uniq} ${buildNthList(hideLineNums1)} {
+  display: none !important;
+}
+`;
+    }
+
+    if (hideMarkerNums1.length > 0) {
+      css += `
+/* ${uniq}: always hide //--- marker line itself */
+.cm-editor.${uniq} ${buildNthList(hideMarkerNums1)} {
+  display: none !important;
+}
+`;
+    }
+
+    // Gutter (Zeilennummern) nur ausblenden, wenn wir wirklich was ausblenden
+    if (hideFirstCount > 0 || hideLineNums1.length > 0 || hideMarkerNums1.length > 0) {
+      css += `
+.cm-editor.${uniq} .cm-gutters { display: none !important; }
+`;
+    }
+
+    // Optional: only-viz => CodeMirror komplett ausblenden (Visual bleibt)
     if (customEl.classList.contains(CLASS_ONLY_VIZ)) {
-      cmRoot.style.setProperty("display", "none", "important");
-    } else {
-      cmRoot.style.removeProperty("display");
+      css += `
+/* ${uniq}: only-viz -> hide code editor */
+.cm-editor.${uniq} { display: none !important; }
+`;
+    }
+
+    if (!css) return false;
+
+    const tag = ensureStyleTag();
+    if (!tag.textContent.includes(`/* ${uniq}:`)) {
+      tag.appendChild(document.createTextNode(css));
     }
 
     return true;
   }
 
   function process() {
-    document
-      .querySelectorAll(`strudel-editor.${CLASS_BASE}`)
-      .forEach(applyOne);
+    document.querySelectorAll(`strudel-editor.${CLASS_BASE}`).forEach((el, i) => {
+      applyOne(el, i);
+    });
   }
 
-  /* ------------------------------------------------------------
-     Lifecycle & Performance
-  ------------------------------------------------------------ */
-
-  function start() {
+  // wiederholt anwenden (Mount + Update)
+  let tries = 0;
+  const timer = setInterval(() => {
     process();
+    if (++tries > 60) clearInterval(timer);
+  }, 100);
 
-    // kurzes Initial-Polling (Web Components / CodeMirror sind async)
-    let tries = 0;
-    const maxTries = 18;   // ~3.6s
-    const interval = 200;
+  window.addEventListener("load", () => {
+    process();
+    setTimeout(process, 250);
+    setTimeout(process, 1000);
+  });
 
-    const poll = setInterval(() => {
-      process();
-      if (++tries >= maxTries) clearInterval(poll);
-    }, interval);
-
-    // nach load nochmal
-    window.addEventListener("load", () => {
-      process();
+  document.addEventListener("click", (e) => {
+    if ((e.target?.textContent || "").trim() === "Update") {
+      setTimeout(process, 50);
       setTimeout(process, 250);
-      setTimeout(process, 1000);
-    });
-
-    // nach Strudel-"Update"
-    document.addEventListener("click", (e) => {
-      if ((e.target?.textContent || "").trim() === "Update") {
-        setTimeout(process, 50);
-        setTimeout(process, 250);
-      }
-    });
-  }
-
-  start();
+    }
+  });
 })();
