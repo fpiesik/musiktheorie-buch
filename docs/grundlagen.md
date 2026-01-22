@@ -9,11 +9,6 @@ Schlägen.
 👉 Achte nur auf **Reihenfolge** und **Wiederholung**, nicht auf Technik.
 
 ---
-<div style="display:flex; gap:.5rem; align-items:center; margin:.5rem 0;">
-  <button type="button" onclick="window.__strudelToggle?.()">▶/■</button>
-  <button type="button" onclick="window.__strudelEval?.()">Update</button>
-</div>
-
 <div class="strudel-wrap">
   <strudel-editor class="strudel hide-until-marker" id="ex1">
     <!--
@@ -23,26 +18,6 @@ sound("bd sd, - - - hh - hh - -, - perc - perc:1*2")
     -->
   </strudel-editor>
 </div>
-
-<script>
-  (function () {
-    const el = document.getElementById("ex1");
-    // warte kurz, bis das Web Component initialisiert ist
-    const tryBind = () => {
-      if (!el || !el.editor) return false;
-
-      // diese Namen sind Beispiele – bitte per DevTools prüfen und anpassen:
-      window.__strudelToggle = () => el.editor.toggle?.();
-      window.__strudelEval   = () => el.editor.evaluate?.() || el.editor.eval?.();
-
-      return true;
-    };
-
-    if (tryBind()) return;
-    const t = setInterval(() => { if (tryBind()) clearInterval(t); }, 100);
-  })();
-</script>
-
 
 ---
 
