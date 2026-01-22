@@ -15,8 +15,7 @@ Schlägen.
 setcpm(60)
 n("0 2 4 <[6,8] [7,9]>")
 .scale("C:minor").sound("piano")
-._pianoroll()
-//---
+._pianoroll() //-!-
     -->
   </strudel-editor>
 </div>
