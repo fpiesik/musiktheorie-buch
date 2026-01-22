@@ -7,10 +7,6 @@ strudel-editor.strudel {
   overflow: hidden;
 }
 
-strudel-editor.strudel canvas {
-  display: none !important;
-}
-
 strudel-editor.strudel .cm-editor {
   max-height: 6em;
 }
