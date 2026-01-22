@@ -5,43 +5,67 @@
   const BLOCK_MARK = "//---"; // block: alles bis inkl. Marker
   const HIDE_MARK  = "//-!-"; // einzelne Zeile
 
-  function hasMarker(lineEl, marker) {
-    const t = (lineEl.textContent || "");
-    const idx = t.indexOf("//");
-    if (idx === -1) return false;
-    return t.slice(idx).includes(marker);
+  // Debounce
+  function debounce(fn, ms) {
+    let t = null;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), ms);
+    };
   }
 
-  function findRenderedCmRoot(customEl) {
+  function commentPart(lineEl) {
+    const t = (lineEl.textContent || "");
+    const idx = t.indexOf("//");
+    if (idx === -1) return "";
+    return t.slice(idx);
+  }
+
+  function isBlockMarker(lineEl) {
+    // bewusst robust: nicht ans Zeilenende gebunden
+    return commentPart(lineEl).includes(BLOCK_MARK);
+  }
+
+  function isHideLine(lineEl) {
+    return commentPart(lineEl).includes(HIDE_MARK);
+  }
+
+  function findRenderedContainer(customEl) {
+    // Strudel hängt gerenderten Bereich nach <strudel-editor> an
     let n = customEl.nextElementSibling;
     for (let i = 0; i < 12 && n; i++) {
-      const cm = n.querySelector?.(".cm-editor");
-      if (cm) return cm;
+      if (n.querySelector?.(".cm-editor")) return n;
       n = n.nextElementSibling;
     }
     return null;
   }
 
-  function applyToEditor(customEl) {
+  function findRenderedCmRoot(customEl) {
+    const container = findRenderedContainer(customEl);
+    if (!container) return null;
+    return container.querySelector(".cm-editor");
+  }
+
+  function apply(customEl) {
     const cmRoot = findRenderedCmRoot(customEl);
     if (!cmRoot) return false;
 
     const lines = cmRoot.querySelectorAll(".cm-line");
     if (!lines.length) return false;
 
-    // Block-Marker finden (letztes Vorkommen gewinnt)
+    // letztes //--- gewinnt
     let blockIdx = -1;
     lines.forEach((line, i) => {
-      if (hasMarker(line, BLOCK_MARK)) blockIdx = i;
+      if (isBlockMarker(line)) blockIdx = i;
     });
 
     let hidesSomething = false;
 
     lines.forEach((line, i) => {
       const hide =
-        (blockIdx >= 0 && i <= blockIdx) ||  // bis //---
-        hasMarker(line, HIDE_MARK) ||        // //-!-
-        hasMarker(line, BLOCK_MARK);         // Markerzeile selbst
+        (blockIdx >= 0 && i <= blockIdx) || // bis //---
+        isHideLine(line) ||                 // //-!-
+        isBlockMarker(line);                // Markerzeile selbst
 
       if (hide) {
         hidesSomething = true;
@@ -51,7 +75,7 @@
       }
     });
 
-    // Zeilennummern nur ausblenden wenn nötig
+    // optional: gutters verstecken, wenn wir Zeilen verstecken
     const gutters = cmRoot.querySelector(".cm-gutters");
     if (gutters) {
       if (hidesSomething) gutters.style.setProperty("display", "none", "important");
@@ -61,49 +85,66 @@
     return true;
   }
 
-  // Debounce, damit wir bei vielen Mutations nicht dauernd rechnen
-  function debounce(fn, ms) {
-    let t = null;
-    return (...args) => {
-      clearTimeout(t);
-      t = setTimeout(() => fn(...args), ms);
-    };
-  }
+  // --- Beobachter-Management ---
+  // Pro <strudel-editor> merken wir uns:
+  // - aktuell beobachteten cmRoot (kann wechseln!)
+  // - Observer für cmRoot
+  // - Observer für container/parent (um Wechsel zu erkennen)
+  const state = new WeakMap();
 
-  const observers = new WeakMap();
+  function attach(customEl) {
+    const container = findRenderedContainer(customEl);
+    const cmRoot = container?.querySelector?.(".cm-editor") || null;
+    if (!container || !cmRoot) return false;
 
-  function ensureObserver(customEl) {
-    const cmRoot = findRenderedCmRoot(customEl);
-    if (!cmRoot) return false;
+    let s = state.get(customEl);
+    if (!s) {
+      s = { cmRoot: null, cmObs: null, containerObs: null };
+      state.set(customEl, s);
+    }
 
-    if (observers.has(cmRoot)) return true;
+    // Wenn cmRoot neu ist (Play remount!), Observer neu setzen
+    if (s.cmRoot !== cmRoot) {
+      if (s.cmObs) s.cmObs.disconnect();
+      s.cmRoot = cmRoot;
 
-    const run = debounce(() => applyToEditor(customEl), 30);
+      const reapply = debounce(() => apply(customEl), 30);
 
-    const obs = new MutationObserver(run);
-    obs.observe(cmRoot, { childList: true, subtree: true, characterData: true });
+      s.cmObs = new MutationObserver(reapply);
+      s.cmObs.observe(cmRoot, { childList: true, subtree: true, characterData: true });
 
-    observers.set(cmRoot, obs);
+      // sofort anwenden
+      apply(customEl);
+    }
 
-    // initial anwenden
-    applyToEditor(customEl);
+    // Container observer nur einmal: merkt, wenn Strudel cmRoot austauscht
+    if (!s.containerObs) {
+      const reattach = debounce(() => {
+        // Bei Änderungen im Container: ggf. neuen cmRoot finden und attachen
+        attach(customEl);
+        apply(customEl);
+      }, 30);
+
+      s.containerObs = new MutationObserver(reattach);
+      s.containerObs.observe(container, { childList: true, subtree: true });
+    }
+
     return true;
   }
 
   function processAll() {
     document.querySelectorAll(`strudel-editor.${CLASS_BASE}`).forEach((el) => {
-      // falls cmRoot noch nicht existiert, später nochmal versuchen
-      ensureObserver(el);
-      applyToEditor(el);
+      attach(el);
+      apply(el);
     });
   }
 
   function start() {
     processAll();
 
-    // kurzes Bootstrapping: Editor taucht manchmal verzögert auf
+    // Bootstrapping: falls cmRoot erst später erscheint
     let tries = 0;
-    const maxTries = 40; // 40 * 200ms = 8s (nur initial)
+    const maxTries = 60;   // 60 * 200ms = 12s (nur initial)
     const t = setInterval(() => {
       processAll();
       if (++tries >= maxTries) clearInterval(t);
@@ -115,11 +156,19 @@
       setTimeout(processAll, 1000);
     });
 
-    // Nach "Update" ebenfalls neu anwenden
+    // Wenn du Play drückst, passiert oft ein Remount: nochmal kurz nachziehen
     document.addEventListener("click", (e) => {
-      if ((e.target?.textContent || "").trim() === "Update") {
+      const txt = (e.target?.textContent || "").trim();
+      // trifft auf deinen Toggle-Button (▶/■) und ggf. Strudel-Controls
+      if (txt === "▶" || txt === "■" || txt === "▶/■") {
         setTimeout(processAll, 50);
         setTimeout(processAll, 250);
+        setTimeout(processAll, 800);
+      }
+      if (txt === "Update") {
+        setTimeout(processAll, 50);
+        setTimeout(processAll, 250);
+        setTimeout(processAll, 800);
       }
     });
   }
