@@ -18,7 +18,7 @@ Schlägen.
 <!--
 setcpm(120/2)
 sound("bd sd, - - - hh - hh - -, - perc - perc:1*2")
-.bank("RolandCompurhythm1000")  // -!-
+.bank("RolandCompurhythm1000")
 -->
 </strudel-editor>
 
