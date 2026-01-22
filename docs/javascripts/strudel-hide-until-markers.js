@@ -2,28 +2,36 @@
   const CLASS_BASE = "hide-until-marker";
   const CLASS_ONLY_VIZ = "only-viz";
 
-  // Marker (ohne Leerzeichen)
-  const BLOCK_MARK = "//---"; // eigene Zeile empfohlen
-  const HIDE_MARK  = "//-!-"; // am Ende einer Zeile empfohlen
+  // Marker (ohne Leerzeichen gedacht)
+  const BLOCK_MARK = "//---";
+  const HIDE_MARK  = "//-!-";
 
-  // --- Marker-Erkennung (robust gegen Tokenisierung/Whitespace) ---
-  function hasCommentMarker(lineEl, marker) {
-    const t = (lineEl.textContent || "");
-    const idx = t.indexOf("//");
-    if (idx === -1) return false;
-    const comment = t.slice(idx);
-    return comment.includes(marker);
+  /* ------------------------------------------------------------
+     Hilfsfunktionen
+  ------------------------------------------------------------ */
+
+  // entfernt Zero-Width, BOM, Whitespace → robuste Vergleichsbasis
+  function normalize(s) {
+    return (s || "")
+      .replace(/[\u200B-\u200D\uFEFF]/g, "")
+      .replace(/\s+/g, "");
+  }
+
+  function hasMarker(lineEl, marker) {
+    const raw = lineEl.textContent || "";
+    const norm = normalize(raw);
+    return norm.includes(normalize(marker));
   }
 
   function isBlockMarker(lineEl) {
-    return hasCommentMarker(lineEl, BLOCK_MARK);
+    return hasMarker(lineEl, BLOCK_MARK);
   }
 
   function isHideLine(lineEl) {
-    return hasCommentMarker(lineEl, HIDE_MARK);
+    return hasMarker(lineEl, HIDE_MARK);
   }
 
-  // --- Render-Root finden (bei dir hängt Strudel den CM-Block als Geschwister an) ---
+  // Strudel hängt den CodeMirror-Block als Geschwister an
   function findRenderedCmRoot(customEl) {
     let n = customEl.nextElementSibling;
     for (let i = 0; i < 12 && n; i++) {
@@ -34,7 +42,10 @@
     return null;
   }
 
-  // --- Zeilen wirklich ausblenden (nicht per nth-of-type) ---
+  /* ------------------------------------------------------------
+     Kernlogik
+  ------------------------------------------------------------ */
+
   function applyOne(customEl) {
     const cmRoot = findRenderedCmRoot(customEl);
     if (!cmRoot) return false;
@@ -42,39 +53,39 @@
     const lines = cmRoot.querySelectorAll(".cm-line");
     if (!lines.length) return false;
 
-    // Index der Block-Markerzeile (letztes Vorkommen gewinnt)
-    let blockMarkerIndex0 = -1;
+    // letztes Vorkommen von //--- gewinnt
+    let blockMarkerIndex = -1;
     lines.forEach((line, i) => {
-      if (isBlockMarker(line)) blockMarkerIndex0 = i;
+      if (isBlockMarker(line)) blockMarkerIndex = i;
     });
 
-    // Wir zählen, ob überhaupt etwas verborgen wird (für gutters)
     let hidesSomething = false;
 
-    // Zeilen dynamisch ausblenden
     lines.forEach((line, i) => {
       const hide =
-        (blockMarkerIndex0 >= 0 && i <= blockMarkerIndex0) || // alles bis //---
-        isHideLine(line) ||                                   // //-!-
-        isBlockMarker(line);                                  // Markerzeile selbst nie zeigen
+        (blockMarkerIndex >= 0 && i <= blockMarkerIndex) || // bis //---
+        isHideLine(line) ||                                 // //-!-
+        isBlockMarker(line);                                // Markerzeile selbst
 
       if (hide) {
         hidesSomething = true;
         line.style.setProperty("display", "none", "important");
       } else {
-        // falls zuvor versteckt und jetzt nicht mehr: zurücksetzen
         line.style.removeProperty("display");
       }
     });
 
-    // Zeilennummern optional verstecken, wenn wir Zeilen ausblenden
+    // Zeilennummern (Gutter) nur ausblenden, wenn nötig
     const gutters = cmRoot.querySelector(".cm-gutters");
     if (gutters) {
-      if (hidesSomething) gutters.style.setProperty("display", "none", "important");
-      else gutters.style.removeProperty("display");
+      if (hidesSomething) {
+        gutters.style.setProperty("display", "none", "important");
+      } else {
+        gutters.style.removeProperty("display");
+      }
     }
 
-    // only-viz => CodeMirror komplett ausblenden (Visual bleibt)
+    // only-viz: CodeMirror komplett ausblenden, Visual bleibt
     if (customEl.classList.contains(CLASS_ONLY_VIZ)) {
       cmRoot.style.setProperty("display", "none", "important");
     } else {
@@ -85,31 +96,36 @@
   }
 
   function process() {
-    document.querySelectorAll(`strudel-editor.${CLASS_BASE}`).forEach(applyOne);
+    document
+      .querySelectorAll(`strudel-editor.${CLASS_BASE}`)
+      .forEach(applyOne);
   }
 
-  // --- Performance: kurzes Initial-Polling, danach nur ereignisbasiert ---
+  /* ------------------------------------------------------------
+     Lifecycle & Performance
+  ------------------------------------------------------------ */
+
   function start() {
     process();
 
-    // Web Components / CM sind asynchron: kurzes Polling-Fenster
+    // kurzes Initial-Polling (Web Components / CodeMirror sind async)
     let tries = 0;
-    const maxTries = 18;      // 18 * 200ms = 3.6s
-    const intervalMs = 200;
+    const maxTries = 18;   // ~3.6s
+    const interval = 200;
 
-    const timer = setInterval(() => {
+    const poll = setInterval(() => {
       process();
-      if (++tries >= maxTries) clearInterval(timer);
-    }, intervalMs);
+      if (++tries >= maxTries) clearInterval(poll);
+    }, interval);
 
-    // Nach Laden nochmal
+    // nach load nochmal
     window.addEventListener("load", () => {
       process();
       setTimeout(process, 250);
       setTimeout(process, 1000);
     });
 
-    // Nach Klick auf "Update" nochmal (Strudel rendert neu)
+    // nach Strudel-"Update"
     document.addEventListener("click", (e) => {
       if ((e.target?.textContent || "").trim() === "Update") {
         setTimeout(process, 50);
