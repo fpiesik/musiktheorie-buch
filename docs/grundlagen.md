@@ -13,7 +13,7 @@ Schlägen.
   <strudel-editor class="strudel hide-until-marker only-viz">
     <!--
   setcpm(60) //-!-
-  n("0 2 1 3 4 <[6,8] [7,9]>") 
+  n("0 2 1 3 4 <[6,8] [7,9]>") //-!-
   .scale("C:minor").sound("piano") //-!-
     -->
   </strudel-editor>
