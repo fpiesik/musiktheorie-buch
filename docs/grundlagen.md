@@ -12,10 +12,10 @@ Schlägen.
 <div class="strudel-wrap">
   <strudel-editor class="strudel hide-until-marker">
     <!--
-  setcpm(60) //-!-
-  n("0 2 1 3 4 <[6,8] [7,9]>")
+  setcpm(60)
+  n("0 2 1 3 4 <[6,8] [7,9]>") 
   .scale("C:minor").sound("piano")
-  ._pianoroll() //-!-
+  //---
     -->
   </strudel-editor>
 </div>
