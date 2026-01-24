@@ -1,6 +1,5 @@
 (() => {
   const CLASS_BASE = "hide-until-marker";
-  const CLASS_ONLY_VIZ = "only-viz";
 
   // Marker (ohne Leerzeichen)
   const RE_BLOCK_MARKER = /\/\/---\s*$/;  // //--- am Zeilenende
@@ -19,7 +18,7 @@
   }
 
   function findRenderedCmRoot(customEl) {
-    // Bei dir wird der gerenderte Bereich nach <strudel-editor> als Geschwister angehängt
+    // gerenderter CodeMirror kommt als Geschwister nach <strudel-editor>
     let n = customEl.nextElementSibling;
     for (let i = 0; i < 12 && n; i++) {
       const cm = n.querySelector?.(".cm-editor");
@@ -61,26 +60,27 @@
     // 2) Einzelzeilen: Zeilen mit //-!- verstecken
     const hideLineNums1 = [];
 
-    // 3) Markerzeilen immer verstecken (auch wenn kein Block-Modus aktiv)
+    // 3) Markerzeilen immer verstecken
     const hideMarkerNums1 = [];
 
     lines.forEach((line, i) => {
       if (isBlockMarker(line)) {
         blockMarkerIndex0 = i;
-        hideMarkerNums1.push(i + 1); // Markerzeile selbst
+        hideMarkerNums1.push(i + 1);
       }
       if (isHideLine(line)) hideLineNums1.push(i + 1);
     });
 
-    const hideFirstCount = blockMarkerIndex0 >= 0 ? (blockMarkerIndex0 + 1) : 0;
+    const hideFirstCount =
+      blockMarkerIndex0 >= 0 ? (blockMarkerIndex0 + 1) : 0;
 
-    // CSS bauen
     let css = "";
 
     if (hideFirstCount > 0) {
       css += `
 /* ${uniq}: hide first ${hideFirstCount} lines (until //---) */
-.cm-editor.${uniq} .cm-content .cm-line:nth-of-type(-n+${hideFirstCount}) {
+.cm-editor.${uniq}
+.cm-content .cm-line:nth-of-type(-n+${hideFirstCount}) {
   display: none !important;
 }
 `;
@@ -89,7 +89,8 @@
     if (hideLineNums1.length > 0) {
       css += `
 /* ${uniq}: hide lines marked with //-!- */
-.cm-editor.${uniq} ${buildNthList(hideLineNums1)} {
+.cm-editor.${uniq}
+${buildNthList(hideLineNums1)} {
   display: none !important;
 }
 `;
@@ -97,31 +98,28 @@
 
     if (hideMarkerNums1.length > 0) {
       css += `
-/* ${uniq}: always hide //--- marker line itself */
-.cm-editor.${uniq} ${buildNthList(hideMarkerNums1)} {
+/* ${uniq}: always hide //--- marker line */
+.cm-editor.${uniq}
+${buildNthList(hideMarkerNums1)} {
   display: none !important;
 }
 `;
     }
 
-    // Gutter (Zeilennummern) nur ausblenden, wenn wir wirklich was ausblenden
-    if (hideFirstCount > 0 || hideLineNums1.length > 0 || hideMarkerNums1.length > 0) {
+    // Gutter nur ausblenden, wenn wirklich etwas ausgeblendet wird
+    if (hideFirstCount > 0 || hideLineNums1.length > 0) {
       css += `
-.cm-editor.${uniq} .cm-gutters { display: none !important; }
-`;
-    }
-
-    // Optional: only-viz => CodeMirror komplett ausblenden (Visual bleibt)
-    if (customEl.classList.contains(CLASS_ONLY_VIZ)) {
-      css += `
-/* ${uniq}: only-viz -> hide code editor */
-.cm-editor.${uniq} { display: none !important; }
+.cm-editor.${uniq} .cm-gutters {
+  display: none !important;
+}
 `;
     }
 
     if (!css) return false;
 
     const tag = ensureStyleTag();
+
+    // ⚠️ bewusst simpel: nur einmal anhängen (letzter funktionierender Stand)
     if (!tag.textContent.includes(`/* ${uniq}:`)) {
       tag.appendChild(document.createTextNode(css));
     }
@@ -130,12 +128,12 @@
   }
 
   function process() {
-    document.querySelectorAll(`strudel-editor.${CLASS_BASE}`).forEach((el, i) => {
-      applyOne(el, i);
-    });
+    document
+      .querySelectorAll(`strudel-editor.${CLASS_BASE}`)
+      .forEach((el, i) => applyOne(el, i));
   }
 
-  // wiederholt anwenden (Mount + Update)
+  // Wiederholt anwenden (Mount + Update)
   let tries = 0;
   const timer = setInterval(() => {
     process();
