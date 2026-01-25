@@ -83,14 +83,14 @@ Wichtig:
 - Stattdessen wird die Schwingung von Luftteilchen zu Luftteilchen weitergegeben.
     
 
-Unser Ohr kann Schwingungen ungefähr zwischen **20 und 20.000 Schwingungen pro Sekunde (Hertz)** hören.
+Unser Ohr kann Schwingungen ungefähr zwischen **20 und 20.000 Schwingungen pro Sekunde (Hertz)** hören. 
 
 ---
 <div class="strudel-wrap">
   <strudel-editor class="strudel hide-until-marker only-viz">
 <!--
   freq("<20 40 80 160 320 500 1000 2500 5000 10000 20000>")
-  .fast(2).s("sine").decay(0.5).gain("0.3")._scope({scale:7}) //-!-
+  .fast(2).s("sine").decay(0.5).gain("0.3")._scope({scale:5}) //-!-
 -->
   </strudel-editor>
 </div>
