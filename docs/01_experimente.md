@@ -1,198 +1,247 @@
-Experimente mit der Ipad-Sensor-App Hinzufügen!
+## Experimente mit der Ipad-Sensor-App Hinzufügen!
 
+&nbsp;
 
+## Experiment 1: Was ist eine Schwingung?
 
-Experiment 1: Was ist eine Schwingung?
+**(zu Kapitel 2)**
 
-(zu Kapitel 2)
+### Material
 
-Material
+- Lineal
+    
+- Tisch
+    
 
-Lineal
+### Durchführung
 
-Tisch
+- Ein Ende des Lineals auf dem Tisch festhalten
+    
+- Das andere Ende nach unten biegen und loslassen
+    
 
-Durchführung
+### Beobachtung
 
-Ein Ende des Lineals auf dem Tisch festhalten
+- Das Lineal bewegt sich regelmäßig hin und her
+    
+- Die Bewegung wird langsam schwächer
+    
 
-Das andere Ende nach unten biegen und loslassen
-
-Beobachtung
-
-Das Lineal bewegt sich regelmäßig hin und her
-
-Die Bewegung wird langsam schwächer
-
-Merksatz für Schüler:innen
+### Merksatz für Schüler:innen
 
 👉 Eine Schwingung ist eine regelmäßige Hin-und-her-Bewegung.
 
-Experiment 2: Schwingung sehen – Gummiband
+* * *
 
-(zu Kapitel 3 & 5)
+## Experiment 2: Schwingung sehen – Gummiband
 
-Material
+**(zu Kapitel 3 & 5)**
 
-Gummiband
+### Material
 
-Schuhkarton oder Stuhl
+- Gummiband
+    
+- Schuhkarton oder Stuhl
+    
 
-Durchführung
+### Durchführung
 
-Gummiband spannen
+- Gummiband spannen
+    
+- Zupfen
+    
+- Einmal locker, einmal straff spannen
+    
 
-Zupfen
+### Beobachtung
 
-Einmal locker, einmal straff spannen
+- Locker: tiefer Ton
+    
+- Straff: höherer Ton
+    
+- Das Band ist sichtbar in Bewegung
+    
 
-Beobachtung
+### Lernziel
 
-Locker: tiefer Ton
+- Zusammenhang zwischen Schwingung und Tonhöhe
 
-Straff: höherer Ton
+* * *
 
-Das Band ist sichtbar in Bewegung
+## Experiment 3: Schall ist Luft in Bewegung
 
-Lernziel
-Zusammenhang zwischen Schwingung und Tonhöhe
-Experiment 3: Schall ist Luft in Bewegung
+**(zu Kapitel 4)**
 
-(zu Kapitel 4)
+### Material
 
-Material
+- Kerze
+    
+- Lautsprecher oder Trommel
+    
 
-Kerze
+### Durchführung
 
-Lautsprecher oder Trommel
+- Kerze anzünden
+    
+- In der Nähe laut sprechen, klatschen oder Trommel schlagen
+    
 
-Durchführung
+### Beobachtung
 
-Kerze anzünden
+- Flamme bewegt sich
 
-In der Nähe laut sprechen, klatschen oder Trommel schlagen
-
-Beobachtung
-Flamme bewegt sich
-Kernaussage
+### Kernaussage
 
 👉 Schall bewegt Luft – aber die Luft fliegt nicht weg.
 
-Experiment 4: Tonhöhe = Frequenz
+* * *
 
-(zu Kapitel 5)
+## Experiment 4: Tonhöhe = Frequenz
 
-Material
+**(zu Kapitel 5)**
 
-Stimmgabel oder Handy mit Tongenerator-App
+### Material
 
-Alternativ: verschieden große Flaschen
+- Stimmgabel oder Handy mit Tongenerator-App
+    
+- Alternativ: verschieden große Flaschen
+    
 
-Durchführung
+### Durchführung
 
-Unterschiedliche Töne erzeugen
+- Unterschiedliche Töne erzeugen
+    
+- Vergleich: hoch / tief
+    
 
-Vergleich: hoch / tief
+### Erweiterung
 
-Erweiterung
-Wasser in Flaschen füllen und hineinblasen
-Lernziel
-Schnell = hoch, langsam = tief
-Experiment 5: Obertöne entdecken
+- Wasser in Flaschen füllen und hineinblasen
 
-(zu Kapitel 6 & 7)
+### Lernziel
 
-Material
+- Schnell = hoch, langsam = tief
 
-Gitarre oder Monochord
+* * *
 
-Optional: Klavier
+## Experiment 5: Obertöne entdecken
 
-Durchführung
+**(zu Kapitel 6 & 7)**
 
-Saite normal anschlagen
+### Material
 
-Saite leicht in der Mitte berühren und anschlagen
+- Gitarre oder Monochord
+    
+- Optional: Klavier
+    
 
-Dann bei 1/3 oder 1/4
+### Durchführung
 
-Beobachtung
-Der Ton wird höher und „gläsern“
-Lehrersatz
+- Saite normal anschlagen
+    
+- Saite leicht in der Mitte berühren und anschlagen
+    
+- Dann bei 1/3 oder 1/4
+    
+
+### Beobachtung
+
+- Der Ton wird höher und „gläsern“
+
+### Lehrersatz
 
 👉 Die Saite schwingt gleichzeitig auf verschiedene Arten.
 
-Experiment 6: Resonanz spüren
+* * *
 
-(zu Kapitel 8)
+## Experiment 6: Resonanz spüren
 
-Material
+**(zu Kapitel 8)**
 
-Stimmgabel
+### Material
 
-Tisch oder Wasserschale
+- Stimmgabel
+    
+- Tisch oder Wasserschale
+    
 
-Durchführung
+### Durchführung
 
-Stimmgabel anschlagen
+- Stimmgabel anschlagen
+    
+- Auf Tisch oder ins Wasser halten
+    
 
-Auf Tisch oder ins Wasser halten
+### Beobachtung
 
-Beobachtung
+- Ton wird lauter
+    
+- Wasser spritzt
+    
 
-Ton wird lauter
-
-Wasser spritzt
-
-Erkenntnis
+### Erkenntnis
 
 👉 Resonanz verstärkt Schwingung.
 
-Experiment 7: Klangfarbe vergleichen
+* * *
 
-(zu Kapitel 9)
+## Experiment 7: Klangfarbe vergleichen
 
-Material
+**(zu Kapitel 9)**
 
-Gleicher Ton auf:
+### Material
 
-Klavier
+- Gleicher Ton auf:
+    
+    - Klavier
+        
+    - Flöte
+        
+    - Stimme
+        
+    - App
+        
 
-Flöte
+### Leitfrage
 
-Stimme
+- Warum klingt alles unterschiedlich, obwohl der Ton gleich ist?
 
-App
-
-Leitfrage
-Warum klingt alles unterschiedlich, obwohl der Ton gleich ist?
-Antwort
+### Antwort
 
 👉 Wegen der Obertöne.
 
-Experiment 8 (Abschluss): Schwingung im eigenen Körper
+* * *
 
-(zu Kapitel 3 & 8)
+## Experiment 8 (Abschluss): Schwingung im eigenen Körper
 
-Material
-Eigene Stimme
-Durchführung
+**(zu Kapitel 3 & 8)**
 
-Summen
+### Material
 
-Hand auf Brust oder Hals legen
+- Eigene Stimme
 
-Beobachtung
-Vibration spürbar
-Pädagogischer Moment
+### Durchführung
+
+- Summen
+    
+- Hand auf Brust oder Hals legen
+    
+
+### Beobachtung
+
+- Vibration spürbar
+
+### Pädagogischer Moment
 
 👉 Musik ist nicht nur außerhalb von uns – sie entsteht in uns.
 
-Didaktischer Tipp (sehr empfehlenswert)
+* * *
 
-Am Kapitelende eine Reflexionsbox:
+## Didaktischer Tipp (sehr empfehlenswert)
 
-Nenne drei Dinge, die schwingen, aber keine Musik machen.
-Nenne drei Dinge, die schwingen und Musik machen.
+Am Kapitelende eine **Reflexionsbox**:
 
-Das trennt Naturphänomen und künstlerische Gestaltung sauber.
+> Nenne drei Dinge, die schwingen, aber keine Musik machen.  
+> Nenne drei Dinge, die schwingen und Musik machen.
+
+Das trennt **Naturphänomen** und **künstlerische Gestaltung** sauber.
