@@ -15,8 +15,8 @@ theme:
 
 nav:
   - Start: index.md
-  - Musik ist Schwingung:
-      - Klang & Ton: grundlagen.md
+  - 01 Schwingungen, Die Bausteine der Musik:
+      - Was ist Schwingung?: 01_schwingung.md
       - Rhythmus: rhythmus.md
   - 01:
       - Klang & Ton: grundlagen.md
