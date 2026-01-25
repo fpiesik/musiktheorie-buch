@@ -85,6 +85,20 @@ Wichtig:
 
 Unser Ohr kann Schwingungen ungefähr zwischen **20 und 20.000 Schwingungen pro Sekunde (Hertz)** hören.
 
+---
+<div class="strudel-wrap">
+  <strudel-editor class="strudel hide-until-marker only-viz">
+<!--
+  freq("<20 40 80 160 320 500 1000 2500 5000 10000 20000>")
+  .fast(2).s("sine").gain("0.3")._scope({scale:20}) //-!-
+-->
+  </strudel-editor>
+</div>
+
+---
+
+
+
 * * *
 
 ## 5\. Tonhöhe – schnell oder langsam?
