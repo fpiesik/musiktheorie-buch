@@ -2,7 +2,7 @@
 
 Musik kann man nicht sehen, sie entsteht aber nicht aus dem Nichts. Bevor wir einen Ton hören können, muss sich etwas **bewegen**. Diese besondere Art der Bewegung nennt man **Schwingung**.
 
-Eine **Schwingung** ist eine regelmäßige Hin-und-her-Bewegung um eine **Ruhelage**, einen Mittelpunkt.
+Eine **Schwingung** ist eine regelmäßige Hin-und-her-Bewegung um eine **Ruhelage**.
 
 Viele Dinge in unserer Welt schwingen – nicht nur Musikinstrumente:
 
