@@ -15,7 +15,7 @@ theme:
 
 nav:
   - Start: index.md
-  - 01 Schwingungen, Die Bausteine der Musik:
+  - 01 Schwingungen:
       - Was ist Schwingung?: 01_schwingung.md
       - Aufträge: 01_aufträge.md
       - Experimente: 01_experiemnte.md
