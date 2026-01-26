@@ -35,9 +35,9 @@ Stell dir eine Feder vor, an der ein Gewicht hängt. Ziehst du das Gewicht nach 
     
     
 
-Diese drei Eigenschaften begegnen uns im ganzen Musikunterricht immer wieder. Lerne sie mit Hilfe der [Federmaschine](https://fpiesik.github.io/musikbuch/animationen/federmaschine/) besser kennen!
+Diese drei Eigenschaften begegnen uns im ganzen Musikunterricht immer wieder. Lerne sie mit Hilfe der <ins>[Federmaschine](https://fpiesik.github.io/musikbuch/animationen/federmaschine/)</ins> besser kennen!
 
-<img src="../resources/federmaschine.gif" alt="federmaschine.gif" width="412" height="232" class="jop-noMdConv">
+<img src="../resources/federmaschine.gif" alt="federmaschine.gif" width="480" height="270" class="jop-noMdConv">
 
 Wie du siehst, kann man Schwingungen auch aufzeichnen. Zum Beispiel, indem man einen Stift an einem schwingenden Körper befestigt, ein Papier darunter legt und langsam daran zieht. Die Federmaschine macht im Grunde genau das. So entsteht ein so genannter Graph, der den zeitlichen Verlauf der Schwingung zeigt. Geräte, die Schwingungen aufzeichnen und anzeigen können, nennt man **Oszilloskop**.
 
@@ -80,23 +80,11 @@ Wichtig:
 - Die Luft fliegt nicht von der Schallquelle zu unserem Ohr.
     
 - Stattdessen wird die Schwingung von Luftteilchen zu Luftteilchen weitergegeben.
+
+Lerne <ins>[Schallausbreitung](https://fpiesik.github.io/musikbuch/animationen/schallausbreitung/)</ins> besser kennen!
+
+<img src="../resources/schallausbreitung.gif" alt="schallausbreitung.gif" width="480" height="270" class="jop-noMdConv">
     
-
-Unser Ohr kann Schwingungen ungefähr zwischen **20 und 20.000 Schwingungen pro Sekunde (Hertz)** hören. 
-
----
-<div class="strudel-wrap">
-  <strudel-editor class="strudel hide-until-marker only-viz">
-<!--
-  freq("<20 40 80 160 320 500 1000 2500 5000 10000 20000>")
-  .fast(2).s("sine").decay(0.5).gain("0.3")._scope({scale:5}) //-!-
--->
-  </strudel-editor>
-</div>
-
----
-
-
 
 * * *
 
@@ -114,7 +102,21 @@ Das gilt für alle Instrumente:
 - lange, dicke Saiten → tiefe Töne
     
 - kurze, dünne Saiten → hohe Töne
-    
+
+Unser Ohr kann Schwingungen ungefähr zwischen **20 und 20.000 Schwingungen pro Sekunde (Hertz)** hören. 
+
+---
+<div class="strudel-wrap">
+  <strudel-editor class="strudel hide-until-marker only-viz">
+<!--
+  freq("<20 40 80 160 320 500 1000 2500 5000 10000 20000>")
+  .fast(2).s("sine").decay(0.5).gain("0.3")._scope({scale:5}) //-!-
+-->
+  </strudel-editor>
+</div>
+
+---
+
 
 👉 Ob ein Ton hoch oder tief klingt, entscheidet die **Geschwindigkeit der Schwingung**.
 
