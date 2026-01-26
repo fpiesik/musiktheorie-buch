@@ -2,21 +2,6 @@
 
 &nbsp;
 
-## Aufgabe 1: Begriffe verstehen
-
-Erkläre mit eigenen Worten:
-
-1.  Was ist eine **Schwingung**?
-    
-2.  Was bedeutet **Frequenz**?
-    
-3.  Was beschreibt die **Amplitude**?
-    
-
-*(Tipp: Nutze die Merkkarten.)*
-
-* * *
-
 ## Aufgabe 2: Richtig oder falsch?
 
 Kreuze an und verbessere falsche Aussagen.
@@ -51,26 +36,9 @@ D: Wie schnell etwas schwingt
 
 * * *
 
-## Aufgabe 4: Hoch oder tief? Laut oder leise?
 
-Ordne zu:
-
-1.  Hohe Frequenz → *\*\**\*\*\____ Ton
-    
-2.  Niedrige Frequenz → *\*\**\*\*\____ Ton
-    
-3.  Große Amplitude → *\*\**\*\*\____ Ton
-    
-4.  Kleine Amplitude → *\*\**\*\*\____ Ton
     
 
-* * *
-
-## Aufgabe 5: Schwingung im Alltag
-
-Nenne **drei Dinge**, die schwingen, aber **keine Musik** machen.
-
-Nenne **drei Dinge**, die schwingen und **Musik** machen.
 
 * * *
 
