@@ -16,10 +16,10 @@ theme:
 nav:
   - Start: index.md
   - 01 Schwingung:
-      - 'Schwingung: Bausteine der Musik': 01_schwingung.md
-      - Aufgaben: 01_aufgaben.md
-      - Experimente: 01_experimente.md
-      - Merkkarten: 01_merkkarten.md
+      - Alle beginnt mit Bewegung: 01.01.md
+      - Was ist Schwingung?: 01.02.md
+      - 'Schall: Wenn Schwingung hörbar wird': 01.03.md
+      - 'Tonhöhe: Schnell oder langsam?': 01.04.md
   - 02 Obertöne:
       - Eine Schwingung kommt selten allein: 02_obertöne.md
       - Aufgaben: 02_aufgaben.md
