@@ -33,7 +33,6 @@ Stell dir eine Feder vor, an der ein Gewicht hängt. Ziehst du das Gewicht nach 
     
 - **Dämpfung** – wie lange klingt die Schwingung?
     
-- **Auslenkung** - wie ist der schwingende Körper gerade von seiner Ruhelage entfernt?
     
 
 Diese drei Eigenschaften begegnen uns im ganzen Musikunterricht immer wieder. Lerne sie mit Hilfe der [Federmaschine](https://fpiesik.github.io/musikbuch/animationen/federmaschine/) besser kennen!

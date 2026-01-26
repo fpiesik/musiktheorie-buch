@@ -106,4 +106,3 @@ Das gilt für alle Instrumente:
 👉 Ob ein Ton hoch oder tief klingt, entscheidet die **Geschwindigkeit der Schwingung**.
 
 * * *
-
