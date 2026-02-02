@@ -36,6 +36,8 @@ markdown_extensions:
   - footnotes
   - attr_list
   - md_in_html
+  - fenced_code
+
 
 extra_javascript:
   - https://unpkg.com/@strudel/repl@latest
