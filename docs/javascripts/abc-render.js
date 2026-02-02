@@ -1,87 +1,135 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const blocks = document.querySelectorAll("pre code.language-abc");
+/* abc-render.js
+ *
+ * Renders ABC notation blocks in MkDocs pages and adds abcjs playback UI.
+ *
+ * Requirements in mkdocs.yml:
+ *   extra_javascript:
+ *     - javascripts/vendor/abcjs-basic-min.js
+ *     - javascripts/abc-render.js
+ *
+ *   extra_css:
+ *     - stylesheets/vendor/abcjs-audio.css
+ */
 
-  blocks.forEach((code, i) => {
-    const abcText = code.textContent;
+(function () {
+  "use strict";
 
-    // Wrapper ersetzen den Codeblock
-    const wrapper = document.createElement("div");
-    wrapper.className = "abc-wrap";
+  // --- Helpers --------------------------------------------------------------
+
+  function whenAbcjsReady(cb, retries = 80) {
+    if (window.ABCJS && window.ABCJS.renderAbc && window.ABCJS.synth) return cb();
+    if (retries <= 0) {
+      console.error("abcjs not loaded: window.ABCJS is missing or incomplete");
+      return;
+    }
+    setTimeout(() => whenAbcjsReady(cb, retries - 1), 100);
+  }
+
+  function findAbcBlocks(root = document) {
+    // MkDocs fenced code blocks usually render as: <pre><code class="language-abc">...</code></pre>
+    return Array.from(root.querySelectorAll("pre > code.language-abc, pre > code.lang-abc"));
+  }
+
+  function createContainer() {
+    const wrap = document.createElement("div");
+    wrap.className = "abc-wrap";
+
+    const audioDiv = document.createElement("div");
+    audioDiv.className = "abc-audio";
 
     const notationDiv = document.createElement("div");
     notationDiv.className = "abc-notation";
 
-    const controlsDiv = document.createElement("div");
-    controlsDiv.className = "abc-controls";
+    wrap.appendChild(audioDiv);
+    wrap.appendChild(notationDiv);
 
-    const playBtn = document.createElement("button");
-    playBtn.type = "button";
-    playBtn.textContent = "▶ Play";
-    controlsDiv.appendChild(playBtn);
+    return { wrap, audioDiv, notationDiv };
+  }
 
-    wrapper.appendChild(controlsDiv);
-    wrapper.appendChild(notationDiv);
+  // --- Main rendering -------------------------------------------------------
 
-    // Codeblock ersetzen
-    const pre = code.parentElement;
-    pre.replaceWith(wrapper);
+  async function renderOne(codeEl) {
+    if (!codeEl || codeEl.dataset.abcProcessed === "1") return;
 
-    // 1) Render Notation + Tune referenzieren
-    // renderAbc gibt ein Array zurück, wir nehmen das erste Tune-Objekt
-    const visualObjs = ABCJS.renderAbc(notationDiv, abcText, {
-      responsive: "resize",
-      add_classes: true
-    });
+    const abcText = (codeEl.textContent || "").trim();
+    if (!abcText) return;
 
-    const visualObj = visualObjs && visualObjs[0];
-    if (!visualObj) {
-      playBtn.disabled = true;
-      playBtn.textContent = "Playback nicht verfügbar";
+    const pre = codeEl.closest("pre");
+    if (!pre) return;
+
+    // Mark as processed before we start (prevents double init on fast nav)
+    codeEl.dataset.abcProcessed = "1";
+
+    const { wrap, audioDiv, notationDiv } = createContainer();
+
+    // Replace the <pre> block with our container
+    pre.replaceWith(wrap);
+
+    // Render notation
+    let visualObj;
+    try {
+      const visualObjs = ABCJS.renderAbc(notationDiv, abcText, {
+        responsive: "resize",
+        add_classes: true,
+      });
+      visualObj = visualObjs && visualObjs[0];
+    } catch (e) {
+      console.error("ABC render error:", e);
+      audioDiv.textContent = "ABC render error (see console).";
       return;
     }
 
-    // 2) Playback (Synth) – lazy init on first click
-    let synthReady = false;
-    let synthCtrl = null;
-    let isPlaying = false;
+    if (!visualObj) {
+      audioDiv.textContent = "Could not render ABC notation.";
+      return;
+    }
 
-    async function initSynthIfNeeded() {
-      if (synthReady) return;
+    // Create audio UI (IMPORTANT: load into audioDiv ONLY, never into wrap/notationDiv)
+    try {
+      const synthCtrl = new ABCJS.synth.SynthController();
 
-      synthCtrl = new ABCJS.synth.SynthController();
-      synthCtrl.load(wrapper, null, {
-        displayPlay: false,
+      // This will create the built-in Play button + progress bar
+      synthCtrl.load(audioDiv, null, {
+        displayPlay: true,
         displayProgress: true,
         displayLoop: false,
-        displayRestart: false
+        displayRestart: false,
       });
 
-      await synthCtrl.setTune(visualObj, false, { chordsOff: true });
+      // Prepare tune for playback
+      await synthCtrl.setTune(visualObj, false, {
+        chordsOff: true,
+      });
 
-      synthReady = true;
+      // Optional: make sure the audio UI is visible even if empty styles exist
+      audioDiv.style.display = "";
+    } catch (e) {
+      console.error("ABC Playback error:", e);
+      audioDiv.textContent = "Playback error (see console).";
     }
+  }
 
-    async function togglePlay() {
-      try {
-        await initSynthIfNeeded();
+  function renderAll() {
+    const blocks = findAbcBlocks(document);
+    blocks.forEach((codeEl) => {
+      // renderOne is async; we intentionally don't await so it doesn't block UI
+      renderOne(codeEl);
+    });
+  }
 
-        if (!synthCtrl) return;
+  // --- MkDocs Material integration -----------------------------------------
 
-        if (!isPlaying) {
-          synthCtrl.play();
-          isPlaying = true;
-          playBtn.textContent = "■ Stop";
-        } else {
-          synthCtrl.pause(); // pause toggelt zuverlässig
-          isPlaying = false;
-          playBtn.textContent = "▶ Play";
-        }
-      } catch (err) {
-        console.error("ABC Playback error:", err);
-        playBtn.textContent = "Playback Fehler (Console)";
-      }
-    }
+  function boot() {
+    whenAbcjsReady(() => {
+      renderAll();
+    });
+  }
 
-    playBtn.addEventListener("click", togglePlay);
-  });
-});
+  // MkDocs Material "Instant navigation": rerun on every page swap if available
+  if (window.document$ && typeof window.document$.subscribe === "function") {
+    window.document$.subscribe(() => boot());
+  } else {
+    // Classic full-page load
+    window.addEventListener("DOMContentLoaded", boot);
+  }
+})();

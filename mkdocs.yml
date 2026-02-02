@@ -50,5 +50,5 @@ extra_javascript:
 extra_css:
   - styles/strudel.css
   - styles/vendor/abcjs-audio.css
-  - styles/abc.css
+  #- styles/abc.css
 
