@@ -41,6 +41,8 @@ extra_javascript:
   - https://unpkg.com/@strudel/repl@latest
   - javascripts/strudel-controls.js
   - javascripts/strudel-hide-until-markers.js
+  - https://cdn.jsdelivr.net/npm/abcjs@6.2.3/dist/abcjs-min.js
+  - javascripts/abc-render.js
 
 extra_css:
   - styles/strudel.css
