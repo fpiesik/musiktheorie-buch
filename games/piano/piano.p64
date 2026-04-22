@@ -1,0 +1,270 @@
+picotron cartridge // www.picotron.net
+version 2
+
+:: gfx/
+:: map/
+:: sfx/
+:: main.lua
+--[[pod_format="raw",created="2026-03-11 07:30:17",modified="2026-03-11 07:30:17",revision=0]]
+-- picotron keyboard piano
+-- raw keyboard layout:
+--
+--   2 3   5 6 7
+--   q w e r t y u
+--
+--   s d   g h j
+--   z x c v b n m
+--
+-- left/right cursor = octave down/up
+
+instrument_id = 63
+base_pitch = 48   -- c4 / middle c
+octave = 0
+
+keys = {
+ -- lower row octave
+ {k="z", semi= 0, name="c"},
+ {k="s", semi= 1, name="c#"},
+ {k="x", semi= 2, name="d"},
+ {k="d", semi= 3, name="d#"},
+ {k="c", semi= 4, name="e"},
+ {k="v", semi= 5, name="f"},
+ {k="g", semi= 6, name="f#"},
+ {k="b", semi= 7, name="g"},
+ {k="h", semi= 8, name="g#"},
+ {k="n", semi= 9, name="a"},
+ {k="j", semi=10, name="a#"},
+ {k="m", semi=11, name="b"},
+
+ -- upper row octave
+ {k="q", semi=12, name="c"},
+ {k="2", semi=13, name="c#"},
+ {k="w", semi=14, name="d"},
+ {k="3", semi=15, name="d#"},
+ {k="e", semi=16, name="e"},
+ {k="r", semi=17, name="f"},
+ {k="5", semi=18, name="f#"},
+ {k="t", semi=19, name="g"},
+ {k="6", semi=20, name="g#"},
+ {k="y", semi=21, name="a"},
+ {k="7", semi=22, name="a#"},
+ {k="u", semi=23, name="b"},
+}
+
+down_prev = {}
+key_channel = {}
+channel_key = {}
+
+function clear_mem(addr, len)
+ for i=0,len-1 do
+  poke(addr+i, 0)
+ end
+end
+
+function copy_default_wt0(dst_inst_base)
+ -- copy wavetable definition 0 from instrument 0
+ -- so we don't have to guess the default wt header
+ local src = 0x40000 + 0x1e0
+ local dst = dst_inst_base + 0x1e0
+ for i=0,3 do
+  poke(dst+i, peek(src+i))
+ end
+end
+
+function make_piano_instrument(inst_id)
+ local base = 0x40000 + inst_id * 0x200
+ clear_mem(base, 0x200)
+
+ -- copy default wavetable definition 0
+ copy_default_wt0(base)
+
+ -- node 0: root mixer
+ poke(base + 0x00,
+  0,    -- parent/op
+  1,    -- kind=1 mixer
+  0, 0,
+
+  0x0, 0x40, 0, 0, -- volume
+  0x1, 0,    0, 0, -- pan add 0
+  0x1, 0,    0, 0, -- tune add 0
+  0x1, 0,    0, 0, -- bend add 0
+  0x0, 0,    0, 0, -- wave unused here
+  0x0, 0,    0, 0  -- phase unused here
+ )
+
+ -- node 1: main oscillator
+ poke(base + 0x20,
+  0,      -- parent=0, op=add
+  0x02,   -- kind=osc, kind_p=0 => wavetable def 0
+  0, 0,
+
+  0x4,  0, 0x40, 0, -- volume with env0 from 0..64
+  0x0,  0, 0,    0, -- pan center
+  0x1,  0, 0,    0, -- tune relative to note pitch
+  0x1,  0, 0,    0, -- bend add 0
+  0x0,  72, 0,   0, -- wave index: mellow / piano-ish
+  0x0,  0, 0,    0  -- phase
+ )
+
+ -- node 2: quiet overtone oscillator (+12 semitones)
+ poke(base + 0x40,
+  0,      -- parent=0, op=add
+  0x02,   -- kind=osc, kind_p=0 => wavetable def 0
+  0, 0,
+
+  0x4,  0, 18,   0, -- quieter, same env0
+  0x0,  0, 0,    0, -- pan center
+  0x1, 12, 0,    0, -- tune +12 semitones
+  0x1,  0, 0,    0, -- bend add 0
+  0x0,  96, 0,   0, -- slightly brighter wave
+  0x0,  0, 0,    0
+ )
+
+ -- env 0: piano-ish ADSR
+ -- ENV area starts after 8 nodes = 0x100 bytes
+ -- bytes: kind, flags, spd, loop0, loop1, start, 0,0, attack, decay, sustain, release, ...
+ local env0 = base + 0x100
+ poke(env0,
+  0,   -- ADSR
+  0,   -- flags
+  0,   -- spd = track speed / default
+  0, 0, 0, 0, 0,
+  2,   -- attack
+  24,  -- decay
+  24,  -- sustain
+  28   -- release
+ )
+
+ -- optional name (ascii)
+ local name = "keyboard piano"
+ for i=1,#name do
+  poke(base + 0x1f0 + i - 1, ord(name, i))
+ end
+end
+
+function alloc_channel()
+ for ch=0,15 do
+  if channel_key[ch] == nil then
+   return ch
+  end
+ end
+
+ -- steal channel 0 if everything is busy
+ return 0
+end
+
+function press_key(i)
+ local ch = key_channel[i]
+ if ch ~= nil then
+  -- retrigger same key on same channel
+  local pitch = base_pitch + octave * 12 + keys[i].semi
+  note(pitch, instrument_id, 64, 0, 0, ch, true, 0)
+  return
+ end
+
+ ch = alloc_channel()
+
+ -- steal old voice if needed
+ if channel_key[ch] ~= nil then
+  local old_i = channel_key[ch]
+  key_channel[old_i] = nil
+  sfx(-2, ch)
+ end
+
+ local pitch = base_pitch + octave * 12 + keys[i].semi
+ key_channel[i] = ch
+ channel_key[ch] = i
+
+ note(pitch, instrument_id, 64, 0, 0, ch, true, 0)
+end
+
+function release_key(i)
+ local ch = key_channel[i]
+ if ch ~= nil then
+  -- hard stop; for softer behaviour you can experiment here
+  sfx(-2, ch)
+  key_channel[i] = nil
+  channel_key[ch] = nil
+ end
+end
+
+function _init()
+ make_piano_instrument(instrument_id)
+
+ for i=1,#keys do
+  down_prev[i] = false
+ end
+end
+
+function _update()
+ -- octave with cursor left/right
+ if btnp(0) then octave = max(octave - 1, -2) end
+ if btnp(1) then octave = min(octave + 1,  2) end
+
+ for i=1,#keys do
+  local is_down = key(keys[i].k, true)
+
+  if is_down and not down_prev[i] then
+   press_key(i)
+  elseif not is_down and down_prev[i] then
+   release_key(i)
+  end
+
+  down_prev[i] = is_down
+ end
+end
+
+function draw_key_row(x, y, row)
+ local s = ""
+ for i=1,#row do
+  local idx = row[i]
+  local mark = down_prev[idx] and "["..keys[idx].k.."]" or " "..keys[idx].k.." "
+  s ..= mark
+ end
+ print(s, x, y, 7)
+end
+
+function _draw()
+ cls(1)
+
+ print("picotron keyboard piano", 16, 16, 11)
+ print("left/right : octave  "..octave, 16, 30, 6)
+ print("raw keyboard layout like tracker", 16, 42, 7)
+
+ print("upper:", 16, 64, 10)
+ print("  2  3     5  6  7", 16, 76, 5)
+ print(" q  w  e  r  t  y  u", 16, 88, 7)
+
+ print("lower:", 16, 112, 10)
+ print("  s  d     g  h  j", 16, 124, 5)
+ print(" z  x  c  v  b  n  m", 16, 136, 7)
+
+ print("hold keys to play, release to stop", 16, 164, 12)
+ print("instrument: "..instrument_id, 16, 176, 6)
+ print("base pitch: "..base_pitch + octave*12, 16, 188, 6)
+end
+:: .info.pod
+--[[pod,created="2026-01-15 17:19:56",modified="2026-03-11 07:31:27",runtime=24,workspaces={{location="main.lua#237",workspace_index=1},{location="gfx/0.gfx",workspace_index=2},{location="map/0.map",workspace_index=3},{location="sfx/0.sfx",workspace_index=4}}]]
+:: gfx/.info.pod
+--[[pod,created="2026-01-15 17:19:56",modified="2026-03-11 07:31:27"]]
+:: gfx/0.gfx
+b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI1LTAxLTE3IDEwOjM1OjQ4Iixtb2RpZmllZD0iMjAyNS0w
+MS0xNyAxMDozNzo0NCIscmV2aXNpb249Ml1dbHo0AH4AAAASMQAA8yF7WzBdPXtibXA9cHh1AEMg
+EBAE8FYHEAfAF9AXwAcQB-BWLGZsYWdzPTAscGFuX3gIAMt5PTAsem9vbT04fSw_AB-wMQD-----
+-----------------------------------------------------------XUG09OH19
+:: map/.info.pod
+--[[pod,created="2026-01-15 17:19:56",modified="2026-03-11 07:31:27"]]
+:: map/0.map
+b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI1LTAxLTE3IDEwOjM1OjQ4Iixtb2RpZmllZD0iMjAyNi0w
+My0xMSAwNzozMDoxMSIscmV2aXNpb249Ml1dbHo0AEwAAABQAAAA8Rx7e2JtcD1weHUATIAgIAD-
+AAD---8DLGhpZGRlbj1mYWxzZSxwYW5feD0wCADSeT0wLHRpbGVfaD0xNgoAEHcKAIB6b29tPTF9
+fQ==
+:: sfx/.info.pod
+--[[pod,created="2026-01-15 17:19:56",modified="2026-03-11 07:31:27"]]
+:: sfx/0.sfx
+b64$LS1bW3BvZCxjcmVhdGVkPSIyMDI1LTA3LTMxIDA4OjMwOjI4Iixtb2RpZmllZD0iMjAyNS0w
+Ny0zMSAwODozMDoyOCIscmV2aXNpb249MF1dbHo0AKAAAAALCgAA-zBweHUAAygAAAQABA9AEAIO
+AAGgASACoA4ADxAADfDKAQIDQA8PkAQFBgdADJAICQoLQAyQDwwPDQ8ODEAM8P8BAOv-J6oBEAYP
+MBABIAEgAfAAAhACDhABIA8hIAEwD0Dwww8oD--wxg-4Cg--D4AP9w8NAfAJARAGDjAA------_9
+H-8BAKzPyA9AAA8QQP--sPD-AQD-6lD-----KQ==
+:: [eoc]
